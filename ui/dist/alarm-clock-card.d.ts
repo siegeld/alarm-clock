@@ -3,7 +3,7 @@ import { LovelaceCardEditor, LovelaceCard } from 'custom-card-helpers';
 import type { HomeAssistant, LovelaceCardConfig, ActionConfig } from 'custom-card-helpers';
 export interface AlarmClockCardConfig extends LovelaceCardConfig {
     type: string;
-    entity: string;
+    device_id: string;
     name?: string;
     show_time_picker?: boolean;
     show_days?: boolean;
@@ -22,6 +22,7 @@ export declare class AlarmClockCard extends LitElement implements LovelaceCard {
     private entities;
     setConfig(config: AlarmClockCardConfig): void;
     protected shouldUpdate(changedProps: PropertyValues): boolean;
+    protected firstUpdated(): Promise<void>;
     private _updateEntities;
     protected render(): TemplateResult;
     private _renderTimePicker;
@@ -29,6 +30,8 @@ export declare class AlarmClockCard extends LitElement implements LovelaceCard {
     private _renderDays;
     private _renderScriptsInfo;
     private _renderSnoozeInfo;
+    private _onTimeInputChange;
+    private _onSetTimeButtonClick;
     private _setAlarmTime;
     private _toggleAlarm;
     private _toggleDay;
