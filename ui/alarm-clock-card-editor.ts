@@ -57,7 +57,8 @@ export class AlarmClockCardEditor extends LitElement implements LovelaceCardEdit
           <ha-entity-picker
             .hass=${this.hass}
             .value=${this._entity}
-            .includeDomains=${['alarm_clock']}
+            .includeDomains=${['sensor']}
+            .entityFilter=${(entity) => entity.entity_id.includes('alarm_clock') || entity.attributes?.device_class === 'alarm_clock'}
             allow-custom-entity
             @value-changed=${this._entityChanged}
           ></ha-entity-picker>
