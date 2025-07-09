@@ -524,166 +524,137 @@ class AlarmClockCardEditor extends HTMLElement {
             return;
         }
 
-        const entities = Object.keys(this._hass.states).filter(eid => 
-            eid.startsWith('alarm_clock.')
-        );
-
-        const currentEntity = this._config?.entity || '';
-        const currentName = this._config?.name || '';
-
-        // Clear previous content
-        this.shadowRoot.innerHTML = '';
-
-        // Create style element
-        const style = document.createElement('style');
-        style.textContent = `
-            .card-config {
-                display: flex;
-                flex-direction: column;
-                gap: 20px;
-                padding: 16px;
-            }
-            .form-group {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-            .form-group label {
-                font-weight: 500;
-                color: var(--primary-text-color, #212121);
-                font-size: 14px;
-                margin-bottom: 4px;
-            }
-            .form-group select, 
-            .form-group input[type="text"] {
-                padding: 12px;
-                border: 1px solid var(--divider-color, #e0e0e0);
-                border-radius: 4px;
-                background: var(--card-background-color, white);
-                color: var(--primary-text-color, #212121);
-                font-size: 14px;
-                min-height: 40px;
-                width: 100%;
-                box-sizing: border-box;
-            }
-            .form-group select:focus, 
-            .form-group input:focus {
-                outline: none;
-                border-color: var(--primary-color, #03a9f4);
-            }
-            .switches {
-                border-top: 1px solid var(--divider-color, #e0e0e0);
-                padding-top: 16px;
-                margin-top: 8px;
-            }
-            .switch-group {
-                display: flex;
-                align-items: center;
-                gap: 12px;
-                padding: 8px 0;
-            }
-            .switch-group input[type="checkbox"] {
-                margin: 0;
-                cursor: pointer;
-            }
-            .switch-group label {
-                margin: 0;
-                cursor: pointer;
-                font-weight: normal;
-                flex: 1;
-            }
-            .entity-info {
-                font-size: 12px;
-                color: var(--secondary-text-color, #727272);
-                margin-top: 4px;
-                font-style: italic;
-            }
-        `;
-
-        // Create main container
-        const container = document.createElement('div');
-        container.className = 'card-config';
-
-        // Entity selection
-        const entityGroup = document.createElement('div');
-        entityGroup.className = 'form-group';
-        entityGroup.innerHTML = `
-            <label for="entity">Alarm Clock Entity (Required)</label>
-            <select id="entity">
-                <option value="">Select an alarm clock entity...</option>
-                ${entities.map(entity => 
-                    `<option value="${entity}" ${entity === currentEntity ? 'selected' : ''}>${entity}</option>`
-                ).join('')}
-            </select>
-            ${entities.length === 0 ? '<div class="entity-info">No alarm clock entities found. Please set up the alarm clock integration first.</div>' : ''}
-        `;
-
-        // Name input
-        const nameGroup = document.createElement('div');
-        nameGroup.className = 'form-group';
-        nameGroup.innerHTML = `
-            <label for="name">Card Name (Optional)</label>
-            <input type="text" id="name" value="${currentName}" placeholder="Alarm Clock">
-        `;
-
-        // Display options
-        const optionsGroup = document.createElement('div');
-        optionsGroup.className = 'form-group';
-        optionsGroup.innerHTML = `
-            <label>Display Options</label>
-            <div class="switches">
-                <div class="switch-group">
-                    <input type="checkbox" id="show_time_picker" ${(this._config?.show_time_picker !== false) ? 'checked' : ''}>
-                    <label for="show_time_picker">Show time picker</label>
+        this.shadowRoot.innerHTML = `
+            <style>
+                .card-config {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 24px;
+                    padding: 16px;
+                }
+                .option {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                .option label {
+                    font-weight: 500;
+                    font-size: 14px;
+                    color: var(--primary-text-color);
+                }
+                ha-entity-picker {
+                    width: 100%;
+                }
+                ha-textfield {
+                    width: 100%;
+                }
+                ha-formfield {
+                    display: flex;
+                    align-items: center;
+                    margin: 8px 0;
+                }
+                .switches-section {
+                    border-top: 1px solid var(--divider-color);
+                    padding-top: 16px;
+                }
+                .entity-info {
+                    font-size: 12px;
+                    color: var(--secondary-text-color);
+                    font-style: italic;
+                    margin-top: 4px;
+                }
+            </style>
+            
+            <div class="card-config">
+                <div class="option">
+                    <label>Entity (Required)</label>
+                    <ha-entity-picker
+                        .hass=${this._hass}
+                        .value=${this._config.entity || ''}
+                        .includeDomains=${['alarm_clock']}
+                        allow-custom-entity
+                        @value-changed=${this._entityChanged}
+                    ></ha-entity-picker>
                 </div>
-                <div class="switch-group">
-                    <input type="checkbox" id="show_days" ${(this._config?.show_days !== false) ? 'checked' : ''}>
-                    <label for="show_days">Show day toggles</label>
+
+                <div class="option">
+                    <label>Card Name (Optional)</label>
+                    <ha-textfield
+                        .value=${this._config.name || ''}
+                        placeholder="Alarm Clock"
+                        @input=${this._nameChanged}
+                    ></ha-textfield>
                 </div>
-                <div class="switch-group">
-                    <input type="checkbox" id="show_scripts" ${(this._config?.show_scripts !== false) ? 'checked' : ''}>
-                    <label for="show_scripts">Show scripts info</label>
-                </div>
-                <div class="switch-group">
-                    <input type="checkbox" id="show_snooze_info" ${(this._config?.show_snooze_info !== false) ? 'checked' : ''}>
-                    <label for="show_snooze_info">Show snooze info when snoozed</label>
+
+                <div class="option switches-section">
+                    <label>Display Options</label>
+                    
+                    <ha-formfield label="Show time picker">
+                        <ha-switch
+                            .checked=${this._config.show_time_picker !== false}
+                            @change=${(e) => this._toggleChanged('show_time_picker', e)}
+                        ></ha-switch>
+                    </ha-formfield>
+                    
+                    <ha-formfield label="Show day toggles">
+                        <ha-switch
+                            .checked=${this._config.show_days !== false}
+                            @change=${(e) => this._toggleChanged('show_days', e)}
+                        ></ha-switch>
+                    </ha-formfield>
+                    
+                    <ha-formfield label="Show scripts info">
+                        <ha-switch
+                            .checked=${this._config.show_scripts !== false}
+                            @change=${(e) => this._toggleChanged('show_scripts', e)}
+                        ></ha-switch>
+                    </ha-formfield>
+                    
+                    <ha-formfield label="Show snooze info when snoozed">
+                        <ha-switch
+                            .checked=${this._config.show_snooze_info !== false}
+                            @change=${(e) => this._toggleChanged('show_snooze_info', e)}
+                        ></ha-switch>
+                    </ha-formfield>
                 </div>
             </div>
         `;
-
-        // Append all elements
-        container.appendChild(entityGroup);
-        container.appendChild(nameGroup);
-        container.appendChild(optionsGroup);
-
-        this.shadowRoot.appendChild(style);
-        this.shadowRoot.appendChild(container);
-
-        // Add event listeners after DOM is built
-        setTimeout(() => {
-            this.shadowRoot.querySelectorAll('input, select').forEach(el => {
-                el.addEventListener('change', this._valueChanged.bind(this));
-                el.addEventListener('input', this._valueChanged.bind(this));
-            });
-        }, 0);
     }
 
-    _valueChanged(ev) {
+    _entityChanged(ev) {
         if (!this._config || !this._hass) return;
-
-        const target = ev.target;
-        const configValue = target.id;
-        let value = target.value;
-
-        if (target.type === 'checkbox') {
-            value = target.checked;
-        }
-
+        
+        const value = ev.detail.value;
         this._config = {
             ...this._config,
-            [configValue]: value,
+            entity: value,
         };
+        this._configChanged();
+    }
 
+    _nameChanged(ev) {
+        if (!this._config || !this._hass) return;
+        
+        const value = ev.target.value;
+        this._config = {
+            ...this._config,
+            name: value,
+        };
+        this._configChanged();
+    }
+
+    _toggleChanged(key, ev) {
+        if (!this._config || !this._hass) return;
+        
+        const value = ev.target.checked;
+        this._config = {
+            ...this._config,
+            [key]: value,
+        };
+        this._configChanged();
+    }
+
+    _configChanged() {
         const event = new CustomEvent('config-changed', {
             detail: { config: this._config },
             bubbles: true,
