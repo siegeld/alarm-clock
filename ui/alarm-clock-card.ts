@@ -44,8 +44,7 @@ interface AlarmClockEntities {
 @customElement('alarm-clock-card')
 export class AlarmClockCard extends LitElement implements LovelaceCard {
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
-    await import('./alarm-clock-card-editor');
-    return document.createElement('alarm-clock-card-editor');
+    return document.createElement('alarm-clock-card-editor') as LovelaceCardEditor;
   }
 
   public static getStubConfig(): AlarmClockCardConfig {

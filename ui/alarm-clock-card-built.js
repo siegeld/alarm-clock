@@ -503,10 +503,14 @@ class AlarmClockCardEditor extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
+        this._config = {};
     }
 
     setConfig(config) {
-        this._config = config;
+        this._config = config || {};
+        if (this._hass) {
+            this._render();
+        }
     }
 
     set hass(hass) {
@@ -515,97 +519,153 @@ class AlarmClockCardEditor extends HTMLElement {
     }
 
     _render() {
-        if (!this._hass) return;
+        if (!this._hass) {
+            this.shadowRoot.innerHTML = '<div>Loading...</div>';
+            return;
+        }
 
         const entities = Object.keys(this._hass.states).filter(eid => 
             eid.startsWith('alarm_clock.')
         );
 
-        this.shadowRoot.innerHTML = `
-            <style>
-                .card-config {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                }
-                .form-group {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                }
-                label {
-                    font-weight: 500;
-                    color: var(--primary-text-color);
-                }
-                select, input {
-                    padding: 8px;
-                    border: 1px solid var(--divider-color);
-                    border-radius: 4px;
-                    background: var(--card-background-color);
-                    color: var(--primary-text-color);
-                }
-                .switch-group {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                .switch-group label {
-                    margin: 0;
-                }
-            </style>
-            
-            <div class="card-config">
-                <div class="form-group">
-                    <label for="entity">Entity (Required)</label>
-                    <select id="entity" .value="${this._config.entity || ''}" @change="${this._valueChanged}">
-                        <option value="">Select entity...</option>
-                        ${entities.map(entity => `
-                            <option value="${entity}" ${entity === this._config.entity ? 'selected' : ''}>
-                                ${entity}
-                            </option>
-                        `).join('')}
-                    </select>
-                </div>
+        const currentEntity = this._config?.entity || '';
+        const currentName = this._config?.name || '';
 
-                <div class="form-group">
-                    <label for="name">Name (Optional)</label>
-                    <input type="text" id="name" .value="${this._config.name || ''}" @input="${this._valueChanged}" placeholder="Alarm Clock">
-                </div>
+        // Clear previous content
+        this.shadowRoot.innerHTML = '';
 
-                <div class="form-group">
-                    <div class="switch-group">
-                        <input type="checkbox" id="show_time_picker" .checked="${this._config.show_time_picker !== false}" @change="${this._valueChanged}">
-                        <label for="show_time_picker">Show time picker</label>
-                    </div>
-                </div>
+        // Create style element
+        const style = document.createElement('style');
+        style.textContent = `
+            .card-config {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+                padding: 16px;
+            }
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .form-group label {
+                font-weight: 500;
+                color: var(--primary-text-color, #212121);
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+            .form-group select, 
+            .form-group input[type="text"] {
+                padding: 12px;
+                border: 1px solid var(--divider-color, #e0e0e0);
+                border-radius: 4px;
+                background: var(--card-background-color, white);
+                color: var(--primary-text-color, #212121);
+                font-size: 14px;
+                min-height: 40px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .form-group select:focus, 
+            .form-group input:focus {
+                outline: none;
+                border-color: var(--primary-color, #03a9f4);
+            }
+            .switches {
+                border-top: 1px solid var(--divider-color, #e0e0e0);
+                padding-top: 16px;
+                margin-top: 8px;
+            }
+            .switch-group {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                padding: 8px 0;
+            }
+            .switch-group input[type="checkbox"] {
+                margin: 0;
+                cursor: pointer;
+            }
+            .switch-group label {
+                margin: 0;
+                cursor: pointer;
+                font-weight: normal;
+                flex: 1;
+            }
+            .entity-info {
+                font-size: 12px;
+                color: var(--secondary-text-color, #727272);
+                margin-top: 4px;
+                font-style: italic;
+            }
+        `;
 
-                <div class="form-group">
-                    <div class="switch-group">
-                        <input type="checkbox" id="show_days" .checked="${this._config.show_days !== false}" @change="${this._valueChanged}">
-                        <label for="show_days">Show day toggles</label>
-                    </div>
-                </div>
+        // Create main container
+        const container = document.createElement('div');
+        container.className = 'card-config';
 
-                <div class="form-group">
-                    <div class="switch-group">
-                        <input type="checkbox" id="show_scripts" .checked="${this._config.show_scripts !== false}" @change="${this._valueChanged}">
-                        <label for="show_scripts">Show scripts info</label>
-                    </div>
-                </div>
+        // Entity selection
+        const entityGroup = document.createElement('div');
+        entityGroup.className = 'form-group';
+        entityGroup.innerHTML = `
+            <label for="entity">Alarm Clock Entity (Required)</label>
+            <select id="entity">
+                <option value="">Select an alarm clock entity...</option>
+                ${entities.map(entity => 
+                    `<option value="${entity}" ${entity === currentEntity ? 'selected' : ''}>${entity}</option>`
+                ).join('')}
+            </select>
+            ${entities.length === 0 ? '<div class="entity-info">No alarm clock entities found. Please set up the alarm clock integration first.</div>' : ''}
+        `;
 
-                <div class="form-group">
-                    <div class="switch-group">
-                        <input type="checkbox" id="show_snooze_info" .checked="${this._config.show_snooze_info !== false}" @change="${this._valueChanged}">
-                        <label for="show_snooze_info">Show snooze info</label>
-                    </div>
+        // Name input
+        const nameGroup = document.createElement('div');
+        nameGroup.className = 'form-group';
+        nameGroup.innerHTML = `
+            <label for="name">Card Name (Optional)</label>
+            <input type="text" id="name" value="${currentName}" placeholder="Alarm Clock">
+        `;
+
+        // Display options
+        const optionsGroup = document.createElement('div');
+        optionsGroup.className = 'form-group';
+        optionsGroup.innerHTML = `
+            <label>Display Options</label>
+            <div class="switches">
+                <div class="switch-group">
+                    <input type="checkbox" id="show_time_picker" ${(this._config?.show_time_picker !== false) ? 'checked' : ''}>
+                    <label for="show_time_picker">Show time picker</label>
+                </div>
+                <div class="switch-group">
+                    <input type="checkbox" id="show_days" ${(this._config?.show_days !== false) ? 'checked' : ''}>
+                    <label for="show_days">Show day toggles</label>
+                </div>
+                <div class="switch-group">
+                    <input type="checkbox" id="show_scripts" ${(this._config?.show_scripts !== false) ? 'checked' : ''}>
+                    <label for="show_scripts">Show scripts info</label>
+                </div>
+                <div class="switch-group">
+                    <input type="checkbox" id="show_snooze_info" ${(this._config?.show_snooze_info !== false) ? 'checked' : ''}>
+                    <label for="show_snooze_info">Show snooze info when snoozed</label>
                 </div>
             </div>
         `;
 
-        this.shadowRoot.querySelectorAll('input, select').forEach(el => {
-            el.addEventListener('change', this._valueChanged.bind(this));
-            el.addEventListener('input', this._valueChanged.bind(this));
-        });
+        // Append all elements
+        container.appendChild(entityGroup);
+        container.appendChild(nameGroup);
+        container.appendChild(optionsGroup);
+
+        this.shadowRoot.appendChild(style);
+        this.shadowRoot.appendChild(container);
+
+        // Add event listeners after DOM is built
+        setTimeout(() => {
+            this.shadowRoot.querySelectorAll('input, select').forEach(el => {
+                el.addEventListener('change', this._valueChanged.bind(this));
+                el.addEventListener('input', this._valueChanged.bind(this));
+            });
+        }, 0);
     }
 
     _valueChanged(ev) {
