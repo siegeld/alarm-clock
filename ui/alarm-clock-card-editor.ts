@@ -50,83 +50,105 @@ export class AlarmClockCardEditor extends LitElement implements LovelaceCardEdit
       return html``;
     }
 
-    const entities = Object.keys(this.hass.states).filter(
-      (eid) => eid.startsWith('alarm_clock.')
-    );
-
     return html`
       <div class="card-config">
-        <div class="side-by-side">
-          <paper-dropdown-menu
-            label="Entity (Required)"
-            @value-changed=${this._valueChanged}
-            .configValue=${'entity'}
-            class="dropdown"
-          >
-            <paper-listbox slot="dropdown-content" .selected=${entities.indexOf(this._entity)}>
-              ${entities.map(
-                (entity) => html`
-                  <paper-item .value=${entity}>${entity}</paper-item>
-                `
-              )}
-            </paper-listbox>
-          </paper-dropdown-menu>
+        <div class="option">
+          <label>Entity (Required)</label>
+          <ha-entity-picker
+            .hass=${this.hass}
+            .value=${this._entity}
+            .includeDomains=${['alarm_clock']}
+            allow-custom-entity
+            @value-changed=${this._entityChanged}
+          ></ha-entity-picker>
         </div>
 
-        <div class="side-by-side">
-          <paper-input
-            label="Name (Optional)"
+        <div class="option">
+          <label>Card Name (Optional)</label>
+          <ha-textfield
             .value=${this._name}
-            .configValue=${'name'}
-            @value-changed=${this._valueChanged}
-          ></paper-input>
+            placeholder="Alarm Clock"
+            @input=${this._nameChanged}
+          ></ha-textfield>
         </div>
 
-        <div class="switches">
-          <h3>Display Options</h3>
+        <div class="option switches-section">
+          <label>Display Options</label>
           
-          <div class="switch-wrapper">
+          <ha-formfield label="Show time picker">
             <ha-switch
-              aria-label="Show time picker"
               .checked=${this._show_time_picker}
-              .configValue=${'show_time_picker'}
-              @change=${this._valueChanged}
+              @change=${(e: Event) => this._toggleChanged('show_time_picker', e)}
             ></ha-switch>
-            <div class="switch-label">Show time picker</div>
-          </div>
-
-          <div class="switch-wrapper">
+          </ha-formfield>
+          
+          <ha-formfield label="Show day toggles">
             <ha-switch
-              aria-label="Show day toggles"
               .checked=${this._show_days}
-              .configValue=${'show_days'}
-              @change=${this._valueChanged}
+              @change=${(e: Event) => this._toggleChanged('show_days', e)}
             ></ha-switch>
-            <div class="switch-label">Show day toggles</div>
-          </div>
-
-          <div class="switch-wrapper">
+          </ha-formfield>
+          
+          <ha-formfield label="Show scripts info">
             <ha-switch
-              aria-label="Show scripts info"
               .checked=${this._show_scripts}
-              .configValue=${'show_scripts'}
-              @change=${this._valueChanged}
+              @change=${(e: Event) => this._toggleChanged('show_scripts', e)}
             ></ha-switch>
-            <div class="switch-label">Show scripts info</div>
-          </div>
-
-          <div class="switch-wrapper">
+          </ha-formfield>
+          
+          <ha-formfield label="Show snooze info when snoozed">
             <ha-switch
-              aria-label="Show snooze info"
               .checked=${this._show_snooze_info}
-              .configValue=${'show_snooze_info'}
-              @change=${this._valueChanged}
+              @change=${(e: Event) => this._toggleChanged('show_snooze_info', e)}
             ></ha-switch>
-            <div class="switch-label">Show snooze info when snoozed</div>
-          </div>
+          </ha-formfield>
         </div>
       </div>
     `;
+  }
+
+  private _entityChanged(ev: CustomEvent): void {
+    if (!this._config || !this.hass) {
+      return;
+    }
+    
+    const value = ev.detail.value;
+    this._config = {
+      ...this._config,
+      entity: value,
+    };
+    
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _nameChanged(ev: Event): void {
+    if (!this._config || !this.hass) {
+      return;
+    }
+    
+    const target = ev.target as HTMLInputElement;
+    const value = target.value;
+    this._config = {
+      ...this._config,
+      name: value,
+    };
+    
+    fireEvent(this, 'config-changed', { config: this._config });
+  }
+
+  private _toggleChanged(key: string, ev: Event): void {
+    if (!this._config || !this.hass) {
+      return;
+    }
+    
+    const target = ev.target as HTMLInputElement;
+    const value = target.checked;
+    this._config = {
+      ...this._config,
+      [key]: value,
+    };
+    
+    fireEvent(this, 'config-changed', { config: this._config });
   }
 
   private _valueChanged(ev): void {
@@ -163,60 +185,43 @@ export class AlarmClockCardEditor extends LitElement implements LovelaceCardEdit
       .card-config {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 24px;
+        padding: 16px;
       }
 
-      .side-by-side {
+      .option {
         display: flex;
-        align-items: center;
-        gap: 12px;
+        flex-direction: column;
+        gap: 8px;
       }
 
-      .side-by-side > * {
-        flex: 1;
-        min-width: 0;
+      .option label {
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--primary-text-color);
       }
 
-      .dropdown {
+      ha-entity-picker {
         width: 100%;
       }
 
-      .switches {
+      ha-textfield {
+        width: 100%;
+      }
+
+      ha-formfield {
+        display: flex;
+        align-items: center;
+        margin: 8px 0;
+      }
+
+      .switches-section {
         border-top: 1px solid var(--divider-color);
         padding-top: 16px;
       }
 
-      .switches h3 {
-        margin: 0 0 16px 0;
-        color: var(--primary-text-color);
-        font-size: 16px;
-        font-weight: 500;
-      }
-
-      .switch-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 12px;
-      }
-
-      .switch-label {
-        flex: 1;
-        color: var(--primary-text-color);
-      }
-
       ha-switch {
         flex-shrink: 0;
-      }
-
-      paper-input,
-      paper-dropdown-menu {
-        width: 100%;
-      }
-
-      paper-item {
-        cursor: pointer;
-        min-width: 200px;
       }
     `;
   }
