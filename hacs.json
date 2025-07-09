@@ -1,0 +1,12 @@
+{
+  "name": "Alarm Clock",
+  "hacs": "1.6.0",
+  "domains": ["alarm_clock"],
+  "iot_class": "Calculated",
+  "homeassistant": "2023.1.0",
+  "zip_release": true,
+  "filename": "alarm-clock.zip",
+  "hide_default_branch": true,
+  "render_readme": true,
+  "country": ["US", "CA", "GB", "AU", "NZ", "DE", "FR", "ES", "IT", "NL", "BE", "SE", "DK", "NO", "FI"]
+}

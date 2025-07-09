@@ -1,0 +1,68 @@
+snooze:
+  name: Snooze
+  description: Snooze the alarm for the configured duration
+  fields:
+    entity_id:
+      name: Entity ID
+      description: The alarm clock entity to snooze
+      required: true
+      selector:
+        entity:
+          domain: alarm_clock
+
+dismiss:
+  name: Dismiss
+  description: Dismiss the active alarm
+  fields:
+    entity_id:
+      name: Entity ID
+      description: The alarm clock entity to dismiss
+      required: true
+      selector:
+        entity:
+          domain: alarm_clock
+
+set_alarm:
+  name: Set Alarm Time
+  description: Set the alarm time programmatically
+  fields:
+    entity_id:
+      name: Entity ID
+      description: The alarm clock entity to configure
+      required: true
+      selector:
+        entity:
+          domain: alarm_clock
+    time:
+      name: Time
+      description: The time to set the alarm (HH:MM format)
+      required: true
+      example: "07:30"
+      selector:
+        time:
+
+toggle_day:
+  name: Toggle Day
+  description: Toggle alarm for a specific day of the week
+  fields:
+    entity_id:
+      name: Entity ID
+      description: The alarm clock entity to configure
+      required: true
+      selector:
+        entity:
+          domain: alarm_clock
+    day:
+      name: Day
+      description: The day of the week to toggle
+      required: true
+      selector:
+        select:
+          options:
+            - monday
+            - tuesday
+            - wednesday
+            - thursday
+            - friday
+            - saturday
+            - sunday

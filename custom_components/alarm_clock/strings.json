@@ -1,0 +1,24 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Alarm Clock",
+        "description": "Give your alarm clock a name. All other settings can be configured after setup using the created entities.",
+        "data": {
+          "name": "Name"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Alarm Clock",
+        "description": "Update the alarm clock name.",
+        "data": {
+          "name": "Name"
+        }
+      }
+    }
+  }
+}
