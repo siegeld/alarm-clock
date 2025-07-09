@@ -23,8 +23,6 @@ module.exports = {
   optimization: {
     minimize: true,
   },
-  externals: {
-    'custom-card-helpers': 'customCardHelpers',
-    'lit': 'lit',
-  },
+  // Bundle all dependencies instead of externalizing them
+  externals: {},
 };

@@ -7,6 +7,22 @@ class AlarmClockCard extends HTMLElement {
         this._entities = {};
     }
 
+    static getConfigElement() {
+        return document.createElement('alarm-clock-card-editor');
+    }
+
+    static getStubConfig() {
+        return {
+            type: 'custom:alarm-clock-card',
+            entity: '',
+            name: 'Alarm Clock',
+            show_time_picker: true,
+            show_days: true,
+            show_scripts: true,
+            show_snooze_info: true,
+        };
+    }
+
     set hass(hass) {
         this._hass = hass;
         this._updateEntities();
@@ -17,7 +33,13 @@ class AlarmClockCard extends HTMLElement {
         if (!config.entity) {
             throw new Error('You need to define an entity');
         }
-        this._config = config;
+        this._config = {
+            show_time_picker: true,
+            show_days: true,
+            show_scripts: true,
+            show_snooze_info: true,
+            ...config,
+        };
         this._setupCard();
     }
 
@@ -54,10 +76,10 @@ class AlarmClockCard extends HTMLElement {
                 text-transform: uppercase;
             }
 
-            .status.off { background: #f44336; color: white; }
-            .status.armed { background: #4caf50; color: white; }
-            .status.ringing { background: #ff9800; color: white; animation: blink 1s infinite; }
-            .status.snoozed { background: #2196f3; color: white; }
+            .status.off { background: var(--error-color, #f44336); color: white; }
+            .status.armed { background: var(--success-color, #4caf50); color: white; }
+            .status.ringing { background: var(--warning-color, #ff9800); color: white; animation: blink 1s infinite; }
+            .status.snoozed { background: var(--info-color, #2196f3); color: white; }
 
             @keyframes blink {
                 0%, 50% { opacity: 1; }
@@ -79,16 +101,36 @@ class AlarmClockCard extends HTMLElement {
             .next-alarm {
                 font-size: 14px;
                 color: var(--secondary-text-color);
+                margin-bottom: 8px;
+            }
+
+            .countdown {
+                margin-top: 8px;
+            }
+
+            .countdown-label {
+                font-size: 12px;
+                color: var(--secondary-text-color);
+                display: block;
+                margin-bottom: 4px;
+            }
+
+            .countdown-time {
+                font-size: 18px;
+                font-weight: 500;
+                color: var(--primary-color);
             }
 
             .controls {
                 display: flex;
                 gap: 12px;
                 margin: 20px 0;
+                flex-wrap: wrap;
             }
 
             .control-button {
                 flex: 1;
+                min-width: 120px;
                 padding: 12px;
                 border: none;
                 border-radius: 8px;
@@ -103,10 +145,6 @@ class AlarmClockCard extends HTMLElement {
                 box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             }
 
-            .control-button:active {
-                transform: translateY(0);
-            }
-
             .control-button.primary {
                 background: var(--primary-color);
                 color: white;
@@ -118,13 +156,8 @@ class AlarmClockCard extends HTMLElement {
             }
 
             .control-button.danger {
-                background: #f44336;
+                background: var(--error-color, #f44336);
                 color: white;
-            }
-
-            .control-button:disabled {
-                opacity: 0.5;
-                cursor: not-allowed;
             }
 
             .days-grid {
@@ -151,8 +184,21 @@ class AlarmClockCard extends HTMLElement {
                 color: white;
             }
 
-            .day-button:hover {
-                transform: translateY(-1px);
+            .time-picker {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+                margin: 20px 0;
+            }
+
+            .time-input {
+                padding: 8px 12px;
+                border: 1px solid var(--divider-color);
+                border-radius: 8px;
+                font-size: 16px;
+                background: var(--card-background-color);
+                color: var(--primary-text-color);
             }
 
             .scripts-info {
@@ -174,6 +220,8 @@ class AlarmClockCard extends HTMLElement {
                 justify-content: space-between;
                 margin-bottom: 8px;
                 font-size: 14px;
+                flex-wrap: wrap;
+                gap: 8px;
             }
 
             .script-label {
@@ -183,6 +231,8 @@ class AlarmClockCard extends HTMLElement {
             .script-value {
                 color: var(--primary-text-color);
                 font-weight: 500;
+                text-align: right;
+                flex: 1;
             }
 
             .snooze-info {
@@ -194,21 +244,31 @@ class AlarmClockCard extends HTMLElement {
                 text-align: center;
             }
 
-            .time-picker {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                margin: 16px 0;
-            }
+            @media (max-width: 600px) {
+                :host {
+                    padding: 16px;
+                }
 
-            .time-input {
-                padding: 8px 12px;
-                border: 1px solid var(--divider-color);
-                border-radius: 6px;
-                font-size: 16px;
-                background: var(--card-background-color);
-                color: var(--primary-text-color);
+                .alarm-time {
+                    font-size: 36px;
+                }
+
+                .controls {
+                    flex-direction: column;
+                }
+
+                .control-button {
+                    flex: none;
+                }
+
+                .script-item {
+                    flex-direction: column;
+                    gap: 4px;
+                }
+
+                .script-value {
+                    text-align: left;
+                }
             }
         `;
 
@@ -224,12 +284,13 @@ class AlarmClockCard extends HTMLElement {
         
         this._entities = {
             main: this._hass.states[baseEntity],
-            time: this._hass.states[`time.${entityId}_alarm_time`],
+            time: this._hass.states[`time.${entityId}_time`],
             enabled: this._hass.states[`switch.${entityId}_alarm_enabled`],
-            snooze: this._hass.states[`switch.${entityId}_snooze`],
-            status: this._hass.states[`sensor.${entityId}_alarm_status`],
+            status: this._hass.states[`sensor.${entityId}_status`],
             nextAlarm: this._hass.states[`sensor.${entityId}_next_alarm`],
             timeUntil: this._hass.states[`sensor.${entityId}_time_until_alarm`],
+            snoozeButton: this._hass.states[`button.${entityId}_snooze`],
+            dismissButton: this._hass.states[`button.${entityId}_dismiss`],
             days: {}
         };
 
@@ -248,16 +309,18 @@ class AlarmClockCard extends HTMLElement {
         const enabledEntity = this._entities.enabled;
         const statusEntity = this._entities.status;
         const nextAlarmEntity = this._entities.nextAlarm;
-        const snoozeEntity = this._entities.snooze;
+        const timeUntilEntity = this._entities.timeUntil;
 
-        const alarmTime = timeEntity ? timeEntity.state : '07:00';
-        const isEnabled = enabledEntity ? enabledEntity.state === 'on' : false;
-        const status = statusEntity ? statusEntity.state : 'off';
-        const nextAlarm = nextAlarmEntity ? nextAlarmEntity.attributes.next_alarm_time : null;
-        const nextAlarmDay = nextAlarmEntity ? nextAlarmEntity.attributes.next_alarm_day : null;
+        const alarmTime = timeEntity?.state || '07:00';
+        const isEnabled = enabledEntity?.state === 'on';
+        const status = statusEntity?.state || 'off';
+        const nextAlarm = nextAlarmEntity?.attributes?.next_alarm_time;
+        const nextAlarmDay = nextAlarmEntity?.attributes?.next_alarm_day;
+        const timeUntil = timeUntilEntity?.attributes?.human_readable;
+        const countdownType = timeUntilEntity?.attributes?.countdown_type;
 
-        this.shadowRoot.innerHTML = `
-            <style>${this.shadowRoot.querySelector('style').textContent}</style>
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = `
             <div class="header">
                 <div class="title">${this._config.name || 'Alarm Clock'}</div>
                 <div class="status ${status}">${status}</div>
@@ -266,12 +329,22 @@ class AlarmClockCard extends HTMLElement {
             <div class="time-display">
                 <div class="alarm-time">${alarmTime}</div>
                 ${nextAlarm ? `<div class="next-alarm">Next alarm: ${nextAlarmDay} ${nextAlarm}</div>` : ''}
+                ${timeUntil ? `
+                    <div class="countdown">
+                        <span class="countdown-label">
+                            ${countdownType === 'snooze' ? 'Snooze ends in:' : 'Alarm in:'}
+                        </span>
+                        <span class="countdown-time">${timeUntil}</span>
+                    </div>
+                ` : ''}
             </div>
 
-            <div class="time-picker">
-                <input type="time" class="time-input" value="${alarmTime}" id="timeInput">
-                <button class="control-button secondary" onclick="this.getRootNode().host._setAlarmTime()">Set Time</button>
-            </div>
+            ${this._config.show_time_picker ? `
+                <div class="time-picker">
+                    <input type="time" class="time-input" value="${alarmTime}" id="timeInput">
+                    <button class="control-button secondary" onclick="this.getRootNode().host._setAlarmTime()">Set Time</button>
+                </div>
+            ` : ''}
 
             <div class="controls">
                 <button class="control-button ${isEnabled ? 'danger' : 'primary'}" onclick="this.getRootNode().host._toggleAlarm()">
@@ -283,35 +356,42 @@ class AlarmClockCard extends HTMLElement {
                 ` : ''}
             </div>
 
-            <div class="days-grid">
-                ${this._renderDays()}
-            </div>
-
-            ${this._renderScriptsInfo()}
-            ${status === 'snoozed' ? this._renderSnoozeInfo() : ''}
+            ${this._config.show_days ? this._renderDays() : ''}
+            ${this._config.show_scripts ? this._renderScriptsInfo() : ''}
+            ${this._config.show_snooze_info && status === 'snoozed' ? this._renderSnoozeInfo() : ''}
         `;
+
+        // Clear existing content except style
+        const existingContent = this.shadowRoot.querySelectorAll('div');
+        existingContent.forEach(el => el.remove());
+
+        this.shadowRoot.appendChild(contentDiv);
     }
 
     _renderDays() {
         const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
         const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         
-        return days.map((day, index) => {
-            const dayEntity = this._entities.days[day];
-            const isActive = dayEntity ? dayEntity.state === 'on' : false;
-            
-            return `
-                <button class="day-button ${isActive ? 'active' : ''}" 
-                        onclick="this.getRootNode().host._toggleDay('${day}')">
-                    ${dayLabels[index]}
-                </button>
-            `;
-        }).join('');
+        return `
+            <div class="days-grid">
+                ${days.map((day, index) => {
+                    const dayEntity = this._entities.days[day];
+                    const isActive = dayEntity?.state === 'on';
+                    
+                    return `
+                        <button class="day-button ${isActive ? 'active' : ''}" 
+                                onclick="this.getRootNode().host._toggleDay('${day}')">
+                            ${dayLabels[index]}
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+        `;
     }
 
     _renderScriptsInfo() {
         const main = this._entities.main;
-        if (!main || !main.attributes) return '';
+        if (!main?.attributes) return '';
 
         const scripts = [];
         
@@ -353,7 +433,7 @@ class AlarmClockCard extends HTMLElement {
 
     _renderSnoozeInfo() {
         const main = this._entities.main;
-        if (!main || !main.attributes) return '';
+        if (!main?.attributes) return '';
 
         const snoozeCount = main.attributes.snooze_count || 0;
         const maxSnoozes = main.attributes.max_snoozes || 3;
@@ -371,13 +451,17 @@ class AlarmClockCard extends HTMLElement {
         const timeInput = this.shadowRoot.getElementById('timeInput');
         const time = timeInput.value;
         
-        this._hass.callService('time', 'set_value', {
-            entity_id: this._entities.time.entity_id,
-            time: time
-        });
+        if (this._entities.time) {
+            this._hass.callService('time', 'set_value', {
+                entity_id: this._entities.time.entity_id,
+                time: time
+            });
+        }
     }
 
     _toggleAlarm() {
+        if (!this._entities.enabled) return;
+
         const service = this._entities.enabled.state === 'on' ? 'turn_off' : 'turn_on';
         this._hass.callService('switch', service, {
             entity_id: this._entities.enabled.entity_id
@@ -395,15 +479,19 @@ class AlarmClockCard extends HTMLElement {
     }
 
     _snoozeAlarm() {
-        this._hass.callService('alarm_clock', 'snooze', {
-            entity_id: this._config.entity
-        });
+        if (this._entities.snoozeButton) {
+            this._hass.callService('button', 'press', {
+                entity_id: this._entities.snoozeButton.entity_id
+            });
+        }
     }
 
     _dismissAlarm() {
-        this._hass.callService('alarm_clock', 'dismiss', {
-            entity_id: this._config.entity
-        });
+        if (this._entities.dismissButton) {
+            this._hass.callService('button', 'press', {
+                entity_id: this._entities.dismissButton.entity_id
+            });
+        }
     }
 
     getCardSize() {
@@ -411,21 +499,186 @@ class AlarmClockCard extends HTMLElement {
     }
 }
 
-customElements.define('alarm-clock-card', AlarmClockCard);
+class AlarmClockCardEditor extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this._config = {};
+    }
 
-// Register the card with the custom card helpers
+    setConfig(config) {
+        this._config = config || {};
+        if (this._hass) {
+            this._render();
+        }
+    }
+
+    set hass(hass) {
+        this._hass = hass;
+        this._render();
+    }
+
+    _render() {
+        if (!this._hass) {
+            this.shadowRoot.innerHTML = '<div>Loading...</div>';
+            return;
+        }
+
+        this.shadowRoot.innerHTML = `
+            <style>
+                .card-config {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 24px;
+                    padding: 16px;
+                }
+                .option {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                .option label {
+                    font-weight: 500;
+                    font-size: 14px;
+                    color: var(--primary-text-color);
+                }
+                ha-entity-picker {
+                    width: 100%;
+                }
+                ha-textfield {
+                    width: 100%;
+                }
+                ha-formfield {
+                    display: flex;
+                    align-items: center;
+                    margin: 8px 0;
+                }
+                .switches-section {
+                    border-top: 1px solid var(--divider-color);
+                    padding-top: 16px;
+                }
+                .entity-info {
+                    font-size: 12px;
+                    color: var(--secondary-text-color);
+                    font-style: italic;
+                    margin-top: 4px;
+                }
+            </style>
+            
+            <div class="card-config">
+                <div class="option">
+                    <label>Entity (Required)</label>
+                    <ha-entity-picker
+                        .hass=${this._hass}
+                        .value=${this._config.entity || ''}
+                        .includeDomains=${['alarm_clock']}
+                        allow-custom-entity
+                        @value-changed=${this._entityChanged}
+                    ></ha-entity-picker>
+                </div>
+
+                <div class="option">
+                    <label>Card Name (Optional)</label>
+                    <ha-textfield
+                        .value=${this._config.name || ''}
+                        placeholder="Alarm Clock"
+                        @input=${this._nameChanged}
+                    ></ha-textfield>
+                </div>
+
+                <div class="option switches-section">
+                    <label>Display Options</label>
+                    
+                    <ha-formfield label="Show time picker">
+                        <ha-switch
+                            .checked=${this._config.show_time_picker !== false}
+                            @change=${(e) => this._toggleChanged('show_time_picker', e)}
+                        ></ha-switch>
+                    </ha-formfield>
+                    
+                    <ha-formfield label="Show day toggles">
+                        <ha-switch
+                            .checked=${this._config.show_days !== false}
+                            @change=${(e) => this._toggleChanged('show_days', e)}
+                        ></ha-switch>
+                    </ha-formfield>
+                    
+                    <ha-formfield label="Show scripts info">
+                        <ha-switch
+                            .checked=${this._config.show_scripts !== false}
+                            @change=${(e) => this._toggleChanged('show_scripts', e)}
+                        ></ha-switch>
+                    </ha-formfield>
+                    
+                    <ha-formfield label="Show snooze info when snoozed">
+                        <ha-switch
+                            .checked=${this._config.show_snooze_info !== false}
+                            @change=${(e) => this._toggleChanged('show_snooze_info', e)}
+                        ></ha-switch>
+                    </ha-formfield>
+                </div>
+            </div>
+        `;
+    }
+
+    _entityChanged(ev) {
+        if (!this._config || !this._hass) return;
+        
+        const value = ev.detail.value;
+        this._config = {
+            ...this._config,
+            entity: value,
+        };
+        this._configChanged();
+    }
+
+    _nameChanged(ev) {
+        if (!this._config || !this._hass) return;
+        
+        const value = ev.target.value;
+        this._config = {
+            ...this._config,
+            name: value,
+        };
+        this._configChanged();
+    }
+
+    _toggleChanged(key, ev) {
+        if (!this._config || !this._hass) return;
+        
+        const value = ev.target.checked;
+        this._config = {
+            ...this._config,
+            [key]: value,
+        };
+        this._configChanged();
+    }
+
+    _configChanged() {
+        const event = new CustomEvent('config-changed', {
+            detail: { config: this._config },
+            bubbles: true,
+            composed: true,
+        });
+        this.dispatchEvent(event);
+    }
+}
+
+customElements.define('alarm-clock-card', AlarmClockCard);
+customElements.define('alarm-clock-card-editor', AlarmClockCardEditor);
+
+// Register the card
 window.customCards = window.customCards || [];
 window.customCards.push({
     type: 'alarm-clock-card',
     name: 'Alarm Clock Card',
     description: 'A card for displaying and controlling alarm clock entities',
     preview: true,
-    documentationURL: 'https://github.com/your-username/alarm-clock'
+    documentationURL: 'https://github.com/your-username/alarm-clock',
 });
 
-// Add to the UI
 console.info(
-    `%c  ALARM-CLOCK-CARD  %c  Version 1.0.0  `,
+    '%c  ALARM-CLOCK-CARD  %c  Version 1.0.0  ',
     'color: orange; font-weight: bold; background: black',
     'color: white; font-weight: bold; background: dimgray'
 );
