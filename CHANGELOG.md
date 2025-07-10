@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-07-09
+
+### 🛠️ Bug Fixes & Improvements
+
+#### Frontend Card Fixes
+- **Fixed Status Indicator** - Correctly maps to `switch.alarm_clock_enabled` instead of wrong entity
+- **Fixed Day Button Updates** - Real-time state changes without requiring browser refresh
+- **Enhanced Entity Discovery** - Improved entity mapping logic to prevent conflicts
+
+#### User Experience Improvements
+- **12-Hour Time Format** - Display now shows "8:25 PM" instead of "20:25" for better readability
+- **Immediate Visual Feedback** - All button clicks now provide instant visual responses
+- **Cleaner Interface** - Removed debug logging for production use
+
+#### Backend Synchronization
+- **Fixed State Sync** - Resolved switch/main entity synchronization issues
+- **Improved State Logic** - Always updates state when alarm enabled/disabled changes
+- **Better Error Handling** - Enhanced entity communication reliability
+
+### ✨ Technical Improvements
+
+#### State Management
+- **Enhanced Reactivity** - Improved Lit element change detection for nested objects
+- **Fresh State Reading** - Card now reads directly from `hass.states` for real-time data
+- **Forced Refresh Logic** - Added manual refresh triggers for immediate updates
+
+#### Code Quality
+- **Removed Debug Code** - Cleaned up console logging from troubleshooting
+- **Better Error Messages** - More descriptive error handling and logging
+- **Version Consistency** - Updated both manifest and UI card to 1.1.0
+
+### 🎯 What's Fixed
+
+- ✅ Status correctly shows "ARMED" when enabled, "OFF" when disabled
+- ✅ Time displays in user-friendly 12-hour format (e.g., "8:25 PM")
+- ✅ Day buttons update immediately when clicked
+- ✅ Enable/disable button works properly without refresh
+- ✅ Real-time entity state synchronization across all components
+
+### 🔧 Breaking Changes
+
+None - this is a backwards-compatible bug fix release.
+
+### 📝 Migration Notes
+
+- Hard refresh your browser (Ctrl+F5) after updating to see the fixes
+- No configuration changes required
+- All existing alarm settings will be preserved
+
+---
+
 ## [1.0.0] - 2025-07-08
 
 ### 🎉 Initial Release
