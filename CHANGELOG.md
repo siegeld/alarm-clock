@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fixed Day Button Updates** - Real-time state changes without requiring browser refresh
 - **Enhanced Entity Discovery** - Improved entity mapping logic to prevent conflicts
 
+#### Sensor Updates Fixed
+- **Fixed Next Alarm Sensor** - Now updates immediately when alarm time or days are changed
+- **Fixed Time Until Sensor** - Recalculates countdown instantly when configuration changes
+- **Real-time Synchronization** - All sensors stay in sync with main entity without refresh
+
 #### User Experience Improvements
 - **12-Hour Time Format** - Display now shows "8:25 PM" instead of "20:25" for better readability
 - **Immediate Visual Feedback** - All button clicks now provide instant visual responses
@@ -23,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fixed State Sync** - Resolved switch/main entity synchronization issues
 - **Improved State Logic** - Always updates state when alarm enabled/disabled changes
 - **Better Error Handling** - Enhanced entity communication reliability
+- **Direct Entity References** - Simplified sensor update mechanism using stored references
 
 ### ✨ Technical Improvements
 
