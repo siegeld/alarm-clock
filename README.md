@@ -56,12 +56,12 @@ This single HACS installation provides **two components**:
 ### Manual Installation
 
 1. Copy the `custom_components/alarm_clock` folder to your Home Assistant `custom_components` directory
-2. Copy the `ui/dist/alarm-clock-card.js` file to your `www` directory
+2. Copy the `www/alarm-clock-card/alarm-clock-card.js` file to your `www/alarm-clock-card/` directory
 3. Restart Home Assistant
 4. Add the card resource:
    - Go to **Settings** → **Dashboards** → **Resources**
    - Click **"+ Add Resource"**
-   - URL: `/local/alarm-clock-card.js`
+   - URL: `/local/alarm-clock-card/alarm-clock-card.js`
    - Resource type: **JavaScript module**
 5. Go to **Settings** → **Devices & Services**
 6. Click **"+ Add Integration"** and search for **"Alarm Clock"**

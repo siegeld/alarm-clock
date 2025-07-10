@@ -15,12 +15,12 @@ A custom Lovelace card for the Home Assistant Alarm Clock integration, built wit
 
 ### Option 1: Manual Installation
 
-1. Copy `alarm-clock-card.js` to your `www` folder
+1. Copy `alarm-clock-card.js` to your `www/alarm-clock-card/` folder
 2. Add the card to your Lovelace resources:
 
 ```yaml
 resources:
-  - url: /local/alarm-clock-card.js
+  - url: /local/alarm-clock-card/alarm-clock-card.js
     type: module
 ```
 
