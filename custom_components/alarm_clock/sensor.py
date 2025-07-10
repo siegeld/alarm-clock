@@ -43,11 +43,18 @@ async def async_setup_entry(
         return
 
     # Create sensor entities
+    next_alarm_sensor = NextAlarmSensor(alarm_entity, config_entry)
+    status_sensor = AlarmStatusSensor(alarm_entity, config_entry)
+    time_until_sensor = TimeUntilAlarmSensor(alarm_entity, config_entry)
+    
+    # Register sensor entities with the main alarm entity for updates
+    alarm_entity._sensor_entities = [next_alarm_sensor, status_sensor, time_until_sensor]
+    
     entities = [
         alarm_entity,  # Add the main alarm clock entity
-        NextAlarmSensor(alarm_entity, config_entry),
-        AlarmStatusSensor(alarm_entity, config_entry),
-        TimeUntilAlarmSensor(alarm_entity, config_entry),
+        next_alarm_sensor,
+        status_sensor,
+        time_until_sensor,
     ]
     
     async_add_entities(entities)

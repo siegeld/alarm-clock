@@ -95,6 +95,9 @@ class AlarmClockEntity(SensorEntity):
         
         # Flag to prevent saving state during initial startup
         self._initial_startup = True
+        
+        # References to related sensor entities for updates
+        self._sensor_entities = []
 
     @property
     def name(self) -> str:
@@ -463,6 +466,9 @@ class AlarmClockEntity(SensorEntity):
             await self._save_state()
             await self._async_update_alarm_state()
             self.async_write_ha_state()
+            
+            # Trigger update of related entities (sensors need to recalculate next alarm)
+            await self._async_update_related_entities()
 
     async def async_snooze(self):
         """Snooze the alarm."""
@@ -635,21 +641,10 @@ class AlarmClockEntity(SensorEntity):
 
     async def _async_update_related_entities(self):
         """Update related entities (buttons, sensors) to reflect new state."""
-        # Force update of all related entities by triggering a state update
-        entity_registry = er.async_get(self.hass)
-        related_entities = []
-        
-        # Find all entities related to this alarm
-        for entity_id in entity_registry.entities:
-            entry = entity_registry.entities[entity_id]
-            if (entry.platform == DOMAIN and 
-                entry.config_entry_id == self.entry_id and
-                (entity_id.startswith("button.") or 
-                 entity_id.startswith("sensor.") or
-                 entity_id.startswith("time."))):
-                related_entities.append(entity_id)
-        
-        # Log related entities that should update automatically
-        for entity_id in related_entities:
-            if entity_id in self.hass.states.async_entity_ids():
-                _LOGGER.debug("Related entity should update automatically: %s", entity_id)
+        # Update sensor entities directly using stored references
+        for sensor_entity in self._sensor_entities:
+            try:
+                sensor_entity.async_write_ha_state()
+                _LOGGER.debug("Force updated sensor entity: %s", sensor_entity.entity_id)
+            except Exception as e:
+                _LOGGER.debug("Could not force update sensor entity %s: %s", sensor_entity.entity_id, e)
