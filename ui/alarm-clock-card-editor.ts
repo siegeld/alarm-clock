@@ -123,20 +123,6 @@ export class AlarmClockCardEditor extends LitElement implements LovelaceCardEdit
     `;
   }
 
-  private _deviceChanged(ev: CustomEvent): void {
-    if (!this._config || !this.hass) {
-      return;
-    }
-    
-    const value = ev.detail.value;
-    this._config = {
-      ...this._config,
-      device_id: value,
-    };
-    
-    fireEvent(this, 'config-changed', { config: this._config });
-  }
-
   private async _loadDevices(): Promise<void> {
     if (!this.hass) return;
     

@@ -89,43 +89,56 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def _async_register_services(hass: HomeAssistant) -> None:
     """Register services for the alarm clock."""
     
+    def _find_alarm_entity(entity_id: str):
+        """Find the alarm clock entity by entity_id."""
+        for entry_id, entry_data in hass.data[DOMAIN].items():
+            if isinstance(entry_data, dict) and "entity" in entry_data:
+                entity = entry_data["entity"]
+                if entity and entity.entity_id == entity_id:
+                    return entity
+        return None
+    
     async def async_snooze_service(call):
         """Handle snooze service call."""
         entity_id = call.data.get("entity_id")
         if entity_id:
-            # Find the alarm clock entity and call snooze
-            entity = hass.data[DOMAIN].get("entity")
+            entity = _find_alarm_entity(entity_id)
             if entity:
                 await entity.async_snooze()
+            else:
+                _LOGGER.error("Alarm clock entity not found: %s", entity_id)
     
     async def async_dismiss_service(call):
         """Handle dismiss service call."""
         entity_id = call.data.get("entity_id")
         if entity_id:
-            # Find the alarm clock entity and call dismiss
-            entity = hass.data[DOMAIN].get("entity")
+            entity = _find_alarm_entity(entity_id)
             if entity:
                 await entity.async_dismiss()
+            else:
+                _LOGGER.error("Alarm clock entity not found: %s", entity_id)
     
     async def async_set_alarm_service(call):
         """Handle set alarm service call."""
         entity_id = call.data.get("entity_id")
         time_str = call.data.get("time")
         if entity_id and time_str:
-            # Find the alarm clock entity and set alarm time
-            entity = hass.data[DOMAIN].get("entity")
+            entity = _find_alarm_entity(entity_id)
             if entity:
                 await entity.async_set_alarm_time(time_str)
+            else:
+                _LOGGER.error("Alarm clock entity not found: %s", entity_id)
     
     async def async_toggle_day_service(call):
         """Handle toggle day service call."""
         entity_id = call.data.get("entity_id")
         day = call.data.get("day")
         if entity_id and day:
-            # Find the alarm clock entity and toggle day
-            entity = hass.data[DOMAIN].get("entity")
+            entity = _find_alarm_entity(entity_id)
             if entity:
                 await entity.async_toggle_day(day)
+            else:
+                _LOGGER.error("Alarm clock entity not found: %s", entity_id)
     
     # Register services
     hass.services.async_register(

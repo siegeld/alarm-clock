@@ -240,12 +240,21 @@ class AlarmClockEntity(SensorEntity):
 
         # Calculate next alarm time
         next_alarm = self._calculate_next_alarm()
-        if next_alarm != self._next_alarm:
-            self._next_alarm = next_alarm
-            # Reset execution flags when we get a new alarm time
+        old_next_alarm = self._next_alarm
+        self._next_alarm = next_alarm
+        
+        # Update state based on whether we have a valid next alarm
+        new_state = ALARM_STATE_ARMED if next_alarm else ALARM_STATE_OFF
+        
+        # Reset execution flags when we get a new alarm time
+        if next_alarm != old_next_alarm:
             self._reset_execution_flags()
-            self._state = ALARM_STATE_ARMED if next_alarm else ALARM_STATE_OFF
             _LOGGER.info("New alarm scheduled for: %s", next_alarm.strftime("%Y-%m-%d %H:%M:%S") if next_alarm else "None")
+        
+        # Always update state and write to HA if state changed
+        if self._state != new_state:
+            self._state = new_state
+            _LOGGER.error("🚨 MAIN ENTITY: State updated from %s to %s", self._state, new_state)
             self.async_write_ha_state()
 
         if not next_alarm:

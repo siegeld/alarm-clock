@@ -1,7 +1,7 @@
 {
   "domain": "alarm_clock",
   "name": "Alarm Clock",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "documentation": "https://github.com/your-username/alarm-clock",
   "issue_tracker": "https://github.com/your-username/alarm-clock/issues",
   "dependencies": [],

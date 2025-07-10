@@ -22,7 +22,7 @@ export declare class AlarmClockCard extends LitElement implements LovelaceCard {
     private entities;
     setConfig(config: AlarmClockCardConfig): void;
     protected shouldUpdate(changedProps: PropertyValues): boolean;
-    protected firstUpdated(): Promise<void>;
+    private _refreshEntityStates;
     private _updateEntities;
     protected render(): TemplateResult;
     private _renderTimePicker;
@@ -37,6 +37,7 @@ export declare class AlarmClockCard extends LitElement implements LovelaceCard {
     private _toggleDay;
     private _snoozeAlarm;
     private _dismissAlarm;
+    private _formatTime12Hour;
     getCardSize(): number;
     static get styles(): CSSResultGroup;
 }

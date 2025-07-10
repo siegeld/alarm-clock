@@ -1,5 +1,0 @@
-type: "custom:alarm-clock-card"
-name: "Alarm Clock Card"
-description: "A beautiful card for controlling alarm clock entities"
-version: "1.0.0"
-js_url: "/local/community/alarm-clock/ui/alarm-clock-card.js"

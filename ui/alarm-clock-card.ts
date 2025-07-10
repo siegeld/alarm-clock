@@ -29,18 +29,6 @@ export interface AlarmClockCardConfig extends LovelaceCardConfig {
   double_tap_action?: ActionConfig;
 }
 
-interface AlarmClockEntities {
-  main?: any;
-  time?: any;
-  enabled?: any;
-  status?: any;
-  nextAlarm?: any;
-  timeUntil?: any;
-  snoozeButton?: any;
-  dismissButton?: any;
-  days: { [key: string]: any };
-}
-
 @customElement('alarm-clock-card')
 export class AlarmClockCard extends LitElement implements LovelaceCard {
   public static async getConfigElement(): Promise<LovelaceCardEditor> {
@@ -61,11 +49,19 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
 
   @property({ attribute: false }) public hass!: HomeAssistant;
   @state() private config!: AlarmClockCardConfig;
-  @state() private entities: AlarmClockEntities = { days: {} };
+  @state() private entities: {
+    main?: any;           // sensor.alarm_clock (main status)
+    time?: any;           // time.alarm_clock (alarm time)
+    enabled?: any;        // switch.alarm_clock_enabled
+    status?: any;         // sensor.alarm_clock_status  
+    nextAlarm?: any;      // sensor.alarm_clock_next_alarm
+    timeUntil?: any;      // sensor.alarm_clock_time_until_alarm
+    days?: {[day: string]: any}; // switch.alarm_clock_monday, etc.
+  } = {};
 
   public setConfig(config: AlarmClockCardConfig): void {
     if (!config.device_id) {
-      throw new Error('You need to define a device');
+      throw new Error('You need to define a device_id');
     }
 
     this.config = {
@@ -78,183 +74,209 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
   }
 
   protected shouldUpdate(changedProps: PropertyValues): boolean {
+    console.log('🔍 ALARM CARD: shouldUpdate called', {
+      hasConfig: !!this.config,
+      hasHass: !!this.hass,
+      hasEntities: Object.keys(this.entities).length > 0,
+      changedProps: Array.from(changedProps.keys()),
+    });
+
     if (!this.config) {
+      console.log('🔍 ALARM CARD: No config, returning false');
       return false;
     }
 
-    if (changedProps.has('config')) {
-      return true;
+    // Initialize or refresh entity data when needed
+    if (changedProps.has('hass') && this.hass && this.config) {
+      if (Object.keys(this.entities).length === 0) {
+        console.log('🔍 ALARM CARD: No entities yet, calling _updateEntities');
+        this._updateEntities();
+      } else {
+        console.log('🔍 ALARM CARD: Refreshing entity states');
+        this._refreshEntityStates();
+      }
     }
 
-    if (changedProps.has('hass')) {
-      this._updateEntities();
-      return true;
-    }
-
-    return false;
+    // Let Lit handle change detection based on property changes
+    return changedProps.has('config') || changedProps.has('hass') || changedProps.has('entities');
   }
 
-  protected async firstUpdated(): Promise<void> {
-    await this._updateEntities();
+  private _refreshEntityStates(): void {
+    // Update all entity states from hass.states
+    let hasChanges = false;
+    const newEntities = { ...this.entities, days: { ...this.entities.days } };
+    
+    // Check main entities (time, enabled, status, etc.)
+    for (const [key, entity] of Object.entries(this.entities)) {
+      if (key === 'days') continue; // Handle days separately
+      
+      if (entity && entity.entity_id) {
+        const freshState = this.hass.states[entity.entity_id];
+        if (freshState && (freshState.state !== entity.state || freshState.last_updated !== entity.last_updated)) {
+          console.log(`🔍 ALARM CARD: ${key} entity changed:`, entity.state, '→', freshState.state);
+          (newEntities as any)[key] = freshState;
+          hasChanges = true;
+        }
+      }
+    }
+    
+    // Check day entities separately
+    if (this.entities.days) {
+      for (const [day, dayEntity] of Object.entries(this.entities.days)) {
+        if (dayEntity && dayEntity.entity_id) {
+          const freshState = this.hass.states[dayEntity.entity_id];
+          if (freshState && (freshState.state !== dayEntity.state || freshState.last_updated !== dayEntity.last_updated)) {
+            console.log(`🔍 ALARM CARD: Day ${day} entity changed:`, dayEntity.state, '→', freshState.state);
+            newEntities.days![day] = freshState;
+            hasChanges = true;
+          }
+        }
+      }
+    }
+    
+    if (hasChanges) {
+      console.log('🔍 ALARM CARD: Changes detected, updating entities object');
+      this.entities = newEntities; // This should trigger Lit's reactivity
+    }
   }
 
   private async _updateEntities(): Promise<void> {
-    if (!this.hass || !this.config.device_id) return;
+    if (!this.hass || !this.config.device_id) {
+      console.error('🔍 ALARM CARD: Missing hass or device_id:', {
+        hass: !!this.hass,
+        device_id: this.config.device_id
+      });
+      return;
+    }
+
+    console.log('🔍 ALARM CARD: Looking for entities for device:', this.config.device_id);
 
     try {
-      console.log('🔍 ALARM CARD: Starting robust entity discovery for device:', this.config.device_id);
-      
-      // Get entity registry to find which entities belong to this device
+      // Get entity registry to find entities for this device
       const entityRegistry = await this.hass.callWS({
         type: 'config/entity_registry/list'
       }) as any[];
 
-      // Filter entities by device_id from registry
-      const deviceEntityEntries = entityRegistry.filter(entry => 
-        entry.device_id === this.config.device_id
+      console.log('🔍 ALARM CARD: Entity registry loaded, total entities:', entityRegistry.length);
+
+      // Find entities that belong to this device
+      const deviceEntities = entityRegistry.filter((entity: any) => 
+        entity.device_id === this.config.device_id
       );
 
-      console.log('🔍 ALARM CARD: Found device entity entries:', deviceEntityEntries.length);
+      console.log('🔍 ALARM CARD: Found device entities:', deviceEntities.length, deviceEntities);
 
-      // Initialize entities structure
-      this.entities = {
-        main: undefined,
-        time: undefined,
-        enabled: undefined,
-        status: undefined,
-        nextAlarm: undefined,
-        timeUntil: undefined,
-        snoozeButton: undefined,
-        dismissButton: undefined,
-        days: {},
-      };
-
-      // Days of the week for matching
-      const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-      // Map entities by their registry info and unique_id patterns (name-independent)
-      deviceEntityEntries.forEach(entry => {
-        const entity = this.hass.states[entry.entity_id];
-        if (!entity) {
-          console.warn('🔍 ALARM CARD: Entity not found in states:', entry.entity_id);
-          return;
+      // Map entities by type
+      const newEntities: typeof this.entities = { days: {} };
+      
+      console.log('🔍 ALARM CARD: Processing device entities:');
+      for (const regEntity of deviceEntities) {
+        console.log('🔍 ALARM CARD: Checking entity:', regEntity.entity_id, regEntity);
+        
+        const entityState = this.hass.states[regEntity.entity_id];
+        if (!entityState) {
+          console.log('🔍 ALARM CARD: No state found for:', regEntity.entity_id);
+          continue;
         }
         
-        console.log(`🔍 ALARM CARD: Processing ${entry.platform}.${entry.entity_id} (unique_id: ${entry.unique_id})`);
+        console.log('🔍 ALARM CARD: Entity state found:', regEntity.entity_id, entityState.state, entityState.attributes);
         
-        // Use platform and domain to classify entities robustly
-        if (entry.platform === 'alarm_clock') {
-          // Main alarm clock sensor - should be the primary one without specific suffixes
-          if (entry.entity_id.startsWith('sensor.') && 
-              !entry.unique_id.includes('_status') && 
-              !entry.unique_id.includes('_next_alarm') && 
-              !entry.unique_id.includes('_time_until')) {
-            this.entities.main = entity;
-            console.log('✅ ALARM CARD: Found main sensor:', entry.entity_id, 'unique_id:', entry.unique_id);
+        const entityId = regEntity.entity_id;
+        
+        if (entityId.startsWith('sensor.') && entityId.includes('alarm_clock') && !entityId.includes('status') && !entityId.includes('next') && !entityId.includes('time_until')) {
+          console.log('🔍 ALARM CARD: Found MAIN entity:', entityId);
+          newEntities.main = entityState;
+        } else if (entityId.startsWith('time.') && entityId.includes('alarm_clock')) {
+          console.log('🔍 ALARM CARD: Found TIME entity:', entityId);
+          newEntities.time = entityState;
+        } else if (entityId.startsWith('switch.') && entityId === 'switch.alarm_clock_enabled') {
+          console.log('🔍 ALARM CARD: Found MAIN ENABLED entity:', entityId);
+          newEntities.enabled = entityState;
+        } else if (entityId.startsWith('sensor.') && entityId.includes('status')) {
+          console.log('🔍 ALARM CARD: Found STATUS entity:', entityId);
+          newEntities.status = entityState;
+        } else if (entityId.startsWith('sensor.') && entityId.includes('next_alarm')) {
+          console.log('🔍 ALARM CARD: Found NEXT_ALARM entity:', entityId);
+          newEntities.nextAlarm = entityState;
+        } else if (entityId.startsWith('sensor.') && entityId.includes('time_until')) {
+          console.log('🔍 ALARM CARD: Found TIME_UNTIL entity:', entityId);
+          newEntities.timeUntil = entityState;
+        } else if (entityId.startsWith('switch.') && entityId.includes('alarm_clock_')) {
+          // Day switches: switch.alarm_clock_monday, etc.
+          const dayMatch = entityId.match(/alarm_clock_(\w+)$/);
+          if (dayMatch && dayMatch[1] !== 'enabled') {
+            const day = dayMatch[1];
+            if (['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].includes(day)) {
+              console.log('🔍 ALARM CARD: Found DAY entity:', entityId, day);
+              newEntities.days![day] = entityState;
+            }
           }
-          
-          // Time entity
-          else if (entry.entity_id.startsWith('time.')) {
-            this.entities.time = entity;
-            console.log('✅ ALARM CARD: Found time entity:', entry.entity_id, 'unique_id:', entry.unique_id);
-          }
-          
-          // Main alarm enabled switch - ends with "_enabled" but not pre/post alarm
-          else if (entry.entity_id.startsWith('switch.') && 
-                   entry.unique_id.endsWith('_enabled') && 
-                   !entry.unique_id.includes('_pre_alarm_') && 
-                   !entry.unique_id.includes('_post_alarm_')) {
-            this.entities.enabled = entity;
-            console.log('✅ ALARM CARD: Found enabled switch:', entry.entity_id, 'unique_id:', entry.unique_id);
-          }
-          
-          // Status sensor
-          else if (entry.entity_id.startsWith('sensor.') && entry.unique_id.includes('_status')) {
-            this.entities.status = entity;
-            console.log('✅ ALARM CARD: Found status sensor:', entry.entity_id, 'unique_id:', entry.unique_id);
-          }
-          
-          // Next alarm sensor
-          else if (entry.entity_id.startsWith('sensor.') && entry.unique_id.includes('_next_alarm')) {
-            this.entities.nextAlarm = entity;
-            console.log('✅ ALARM CARD: Found next alarm sensor:', entry.entity_id, 'unique_id:', entry.unique_id);
-          }
-          
-          // Time until alarm sensor
-          else if (entry.entity_id.startsWith('sensor.') && entry.unique_id.includes('_time_until')) {
-            this.entities.timeUntil = entity;
-            console.log('✅ ALARM CARD: Found time until sensor:', entry.entity_id, 'unique_id:', entry.unique_id);
-          }
-          
-          // Snooze button
-          else if (entry.entity_id.startsWith('button.') && entry.unique_id.includes('_snooze')) {
-            this.entities.snoozeButton = entity;
-            console.log('✅ ALARM CARD: Found snooze button:', entry.entity_id, 'unique_id:', entry.unique_id);
-          }
-          
-          // Dismiss button
-          else if (entry.entity_id.startsWith('button.') && entry.unique_id.includes('_dismiss')) {
-            this.entities.dismissButton = entity;
-            console.log('✅ ALARM CARD: Found dismiss button:', entry.entity_id, 'unique_id:', entry.unique_id);
-          }
-          
-          // Day switches - match by unique_id ending with day names
-          else if (entry.entity_id.startsWith('switch.')) {
-            days.forEach(day => {
-              if (entry.unique_id.endsWith(`_${day}`)) {
-                this.entities.days[day] = entity;
-                console.log(`✅ ALARM CARD: Found day switch for ${day}:`, entry.entity_id, 'unique_id:', entry.unique_id);
-              }
-            });
-          }
+        } else {
+          console.log('🔍 ALARM CARD: Unmatched entity:', entityId);
         }
-      });
-
-      console.log('🔍 ALARM CARD: Final entity mapping:', {
-        main: this.entities.main?.entity_id,
-        time: this.entities.time?.entity_id,
-        enabled: this.entities.enabled?.entity_id,
-        status: this.entities.status?.entity_id,
-        nextAlarm: this.entities.nextAlarm?.entity_id,
-        timeUntil: this.entities.timeUntil?.entity_id,
-        snoozeButton: this.entities.snoozeButton?.entity_id,
-        dismissButton: this.entities.dismissButton?.entity_id,
-        days: Object.keys(this.entities.days).reduce((acc, day) => {
-          acc[day] = this.entities.days[day]?.entity_id;
-          return acc;
-        }, {} as Record<string, string>)
-      });
-
+      }
+      
+      console.log('🔍 ALARM CARD: Final mapped entities:', newEntities);
+      console.log('🔍 ALARM CARD: Entity count - main:', !!newEntities.main, 'time:', !!newEntities.time, 'enabled:', !!newEntities.enabled, 'days:', Object.keys(newEntities.days || {}).length);
+      
+      this.entities = newEntities;
+      
     } catch (error) {
-      console.error('❌ ALARM CARD: Error loading entity registry:', error);
+      console.error('🔍 ALARM CARD: Error loading entity registry:', error);
+      this.entities = {};
     }
   }
 
   protected render(): TemplateResult {
-    if (!this.config || !this.entities.main) {
+    if (!this.config || Object.keys(this.entities).length === 0) {
       return html`
         <ha-card>
-          <div class="warning">Device not available: ${this.config?.device_id}</div>
+          <div class="warning">
+            ${!this.config ? 'No configuration' : `Device not available: ${this.config.device_id}`}
+          </div>
         </ha-card>
       `;
     }
 
-    const main = this.entities.main;
-    const timeEntity = this.entities.time;
-    const enabledEntity = this.entities.enabled;
-    const statusEntity = this.entities.status;
-    const nextAlarmEntity = this.entities.nextAlarm;
-    const timeUntilEntity = this.entities.timeUntil;
-
-    const alarmTime = timeEntity?.state || '07:00';
+    // Read data directly from hass.states to ensure fresh data
+    const timeEntity = this.entities.time?.entity_id ? this.hass.states[this.entities.time.entity_id] : null;
+    const enabledEntity = this.entities.enabled?.entity_id ? this.hass.states[this.entities.enabled.entity_id] : null;
+    const mainEntity = this.entities.main?.entity_id ? this.hass.states[this.entities.main.entity_id] : null;
+    
+    const alarmTimeRaw = timeEntity?.state || '07:00';
+    const alarmTime = this._formatTime12Hour(alarmTimeRaw);
     const isEnabled = enabledEntity?.state === 'on';
-    const status = statusEntity?.state || 'off';
-    const nextAlarm = nextAlarmEntity?.attributes?.next_alarm_time;
-    const nextAlarmDay = nextAlarmEntity?.attributes?.next_alarm_day;
-    const timeUntil = timeUntilEntity?.attributes?.human_readable;
-    const countdownType = timeUntilEntity?.attributes?.countdown_type;
+    
+    // Get the actual alarm state from main entity (this is authoritative)
+    // The main entity already handles all logic for off/armed/ringing/snoozed states
+    const status = mainEntity?.state || 'off';
+    
+    // Debug the status logic with fresh data
+    console.log('🔍 ALARM CARD: Status logic debug (FRESH DATA):', {
+      timeEntityId: this.entities.time?.entity_id,
+      enabledEntityId: this.entities.enabled?.entity_id,
+      mainEntityId: this.entities.main?.entity_id,
+      enabledEntityFreshState: enabledEntity?.state,
+      mainEntityFreshState: mainEntity?.state,
+      isEnabled: isEnabled,
+      finalStatus: status,
+    });
+    
+    // Get additional data from sensor entities
+    const nextAlarmAttrs = this.entities.nextAlarm?.attributes || {};
+    const timeUntilAttrs = this.entities.timeUntil?.attributes || {};
+    
+    const nextAlarm = this.entities.nextAlarm?.state;
+    const nextAlarmDay = nextAlarmAttrs.next_alarm_day;
+    const timeUntil = timeUntilAttrs.human_readable;
+    const countdownType = timeUntilAttrs.countdown_type;
+    
+    // Get day states
+    const enabledDays = Object.keys(this.entities.days || {}).filter(day => 
+      this.entities.days![day]?.state === 'on'
+    );
 
-    console.log('🎯 ALARM CARD: Rendering with state:', {
+    console.log('🎯 ALARM CARD: Rendering with entity states:', {
       alarmTime,
       isEnabled,
       status,
@@ -262,13 +284,8 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
       nextAlarmDay,
       timeUntil,
       countdownType,
-      mainState: main.state,
-      mainAttributes: main.attributes,
-      enabledState: enabledEntity?.state,
-      dayStates: Object.keys(this.entities.days).reduce((acc, day) => {
-        acc[day] = this.entities.days[day]?.state;
-        return acc;
-      }, {} as Record<string, string>)
+      enabledDays,
+      entities: this.entities,
     });
 
     return html`
@@ -281,8 +298,8 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
 
           <div class="time-display">
             <div class="alarm-time">${alarmTime}</div>
-            ${nextAlarm
-              ? html`<div class="next-alarm">Next alarm: ${nextAlarmDay} ${nextAlarm}</div>`
+            ${nextAlarm && nextAlarmDay
+              ? html`<div class="next-alarm">Next alarm: ${nextAlarmDay} at ${new Date(nextAlarm).toLocaleTimeString()}</div>`
               : html``}
             ${timeUntil
               ? html`
@@ -298,8 +315,7 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
 
           ${this.config.show_time_picker ? this._renderTimePicker(alarmTime) : html``}
           ${this._renderControls(isEnabled, status)}
-          ${this.config.show_days ? this._renderDays() : html``}
-          ${this.config.show_scripts ? this._renderScriptsInfo() : html``}
+          ${this.config.show_days ? this._renderDays(enabledDays) : html``}
           ${this.config.show_snooze_info && status === 'snoozed' ? this._renderSnoozeInfo() : html``}
         </div>
       </ha-card>
@@ -307,13 +323,17 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
   }
 
   private _renderTimePicker(alarmTime: string): TemplateResult {
+    // Use raw 24-hour time for the input field
+    const alarmTimeRaw = this.entities.time?.state || '07:00';
+    
     return html`
       <div class="time-picker">
         <input
           type="time"
           class="time-input"
           id="alarm-time-input"
-          .value=${alarmTime}
+          .value=${alarmTimeRaw}
+          value=${alarmTimeRaw}
           @change=${this._onTimeInputChange}
         />
         <mwc-button
@@ -358,7 +378,7 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
     `;
   }
 
-  private _renderDays(): TemplateResult {
+  private _renderDays(enabledDays: string[]): TemplateResult {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
     const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -366,8 +386,7 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
       <div class="days-grid">
         ${days.map(
           (day, index) => {
-            const dayEntity = this.entities.days[day];
-            const isActive = dayEntity?.state === 'on';
+            const isActive = enabledDays.includes(day);
 
             return html`
               <mwc-button
@@ -383,30 +402,27 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
     `;
   }
 
-  private _renderScriptsInfo(): TemplateResult {
-    const main = this.entities.main;
-    if (!main?.attributes) return html``;
-
+  private _renderScriptsInfo(attrs: any): TemplateResult {
     const scripts: Array<{ label: string; value: string }> = [];
 
-    if (main.attributes.pre_alarm_enabled && main.attributes.pre_alarm_script) {
+    if (attrs.pre_alarm_enabled && attrs.pre_alarm_script) {
       scripts.push({
         label: 'Pre-alarm',
-        value: `${main.attributes.pre_alarm_script} (${main.attributes.pre_alarm_minutes}m before)`,
+        value: `${attrs.pre_alarm_script} (${attrs.pre_alarm_minutes}m before)`,
       });
     }
 
-    if (main.attributes.alarm_script) {
+    if (attrs.alarm_script) {
       scripts.push({
         label: 'Alarm',
-        value: main.attributes.alarm_script,
+        value: attrs.alarm_script,
       });
     }
 
-    if (main.attributes.post_alarm_enabled && main.attributes.post_alarm_script) {
+    if (attrs.post_alarm_enabled && attrs.post_alarm_script) {
       scripts.push({
         label: 'Post-alarm',
-        value: `${main.attributes.post_alarm_script} (${main.attributes.post_alarm_minutes}m after)`,
+        value: `${attrs.post_alarm_script} (${attrs.post_alarm_minutes}m after)`,
       });
     }
 
@@ -428,13 +444,11 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
   }
 
   private _renderSnoozeInfo(): TemplateResult {
-    const main = this.entities.main;
-    if (!main?.attributes) return html``;
-
-    const snoozeCount = main.attributes.snooze_count || 0;
-    const maxSnoozes = main.attributes.max_snoozes || 3;
-    const snoozeUntil = main.attributes.snooze_until;
-
+    const timeUntilAttrs = this.entities.timeUntil?.attributes || {};
+    const snoozeCount = timeUntilAttrs.snooze_count || 0;
+    const maxSnoozes = this.entities.main?.attributes?.max_snoozes || 3;
+    const snoozeUntil = timeUntilAttrs.snooze_until;
+    
     return html`
       <div class="snooze-info">
         <div>Snoozed (${snoozeCount}/${maxSnoozes})</div>
@@ -446,10 +460,8 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
   }
 
   private _onTimeInputChange(ev: Event): void {
-    // Auto-save when user changes the time input
-    const input = ev.target as HTMLInputElement;
-    const time = input.value;
-    this._setAlarmTime(time);
+    // Don't auto-save on every keystroke - only when user finishes typing
+    // The user can use the "Set Time" button or press Enter
   }
 
   private _onSetTimeButtonClick(ev: Event): void {
@@ -464,7 +476,7 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
   private _setAlarmTime(time: string): void {
     console.log('⏰ ALARM CARD: Setting alarm time to:', time);
     if (!time || !this.entities.time) {
-      console.error('⏰ ALARM CARD: Cannot set time - missing time or time entity:', { time, timeEntity: this.entities.time?.entity_id });
+      console.error('⏰ ALARM CARD: Cannot set time - missing time or time entity:', { time, entity: this.entities.time?.entity_id });
       return;
     }
 
@@ -481,17 +493,17 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
 
   private _toggleAlarm(): void {
     console.log('🔘 ALARM CARD: Toggle alarm button clicked');
-    if (!this.entities.enabled) {
-      console.error('🔘 ALARM CARD: Cannot toggle alarm - no enabled entity found');
+    if (!this.entities.enabled || !this.hass) {
+      console.error('🔘 ALARM CARD: Cannot toggle alarm - no enabled switch entity found');
       return;
     }
 
-    const currentState = this.entities.enabled.state;
-    const service = currentState === 'on' ? 'turn_off' : 'turn_on';
+    const isEnabled = this.entities.enabled.state === 'on';
+    const service = isEnabled ? 'turn_off' : 'turn_on';
     
-    console.log('🔘 ALARM CARD: Toggling alarm:', {
-      entityId: this.entities.enabled.entity_id,
-      currentState,
+    console.log('🔘 ALARM CARD: Toggling alarm via switch:', {
+      switchEntityId: this.entities.enabled.entity_id,
+      currentEnabled: isEnabled,
       service,
     });
 
@@ -500,50 +512,80 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
     });
   }
 
-  private _toggleDay(day: string): void {
+  private async _toggleDay(day: string): Promise<void> {
     console.log('📅 ALARM CARD: Toggle day clicked:', day);
-    const dayEntity = this.entities.days[day];
-    if (!dayEntity) {
-      console.error('📅 ALARM CARD: Cannot toggle day - no entity found for:', day);
+    if (!this.entities.days || !this.entities.days[day]) {
+      console.error('📅 ALARM CARD: Cannot toggle day - no day switch entity found:', day);
       return;
     }
 
-    const currentState = dayEntity.state;
-    const service = currentState === 'on' ? 'turn_off' : 'turn_on';
-    
-    console.log('📅 ALARM CARD: Toggling day:', {
+    const dayEntity = this.entities.days[day];
+    const isEnabled = dayEntity.state === 'on';
+    const service = isEnabled ? 'turn_off' : 'turn_on';
+
+    console.log('📅 ALARM CARD: Toggling day switch:', {
       day,
       entityId: dayEntity.entity_id,
-      currentState,
+      currentEnabled: isEnabled,
       service,
     });
 
-    this.hass.callService('switch', service, {
+    await this.hass.callService('switch', service, {
       entity_id: dayEntity.entity_id,
     });
+    
+    // Force refresh after service call
+    console.log('📅 ALARM CARD: Service call completed, forcing refresh');
+    setTimeout(() => this._refreshEntityStates(), 100);
   }
 
   private _snoozeAlarm(): void {
     console.log('💤 ALARM CARD: Snooze button clicked');
-    if (this.entities.snoozeButton) {
-      console.log('💤 ALARM CARD: Pressing snooze button:', this.entities.snoozeButton.entity_id);
-      this.hass.callService('button', 'press', {
-        entity_id: this.entities.snoozeButton.entity_id,
-      });
-    } else {
-      console.error('💤 ALARM CARD: Cannot snooze - no snooze button entity found');
+    if (!this.entities.main) {
+      console.error('💤 ALARM CARD: Cannot snooze - no main entity found');
+      return;
     }
+
+    console.log('💤 ALARM CARD: Calling snooze service:', this.entities.main.entity_id);
+    this.hass.callService('alarm_clock', 'snooze', {
+      entity_id: this.entities.main.entity_id,
+    });
   }
 
   private _dismissAlarm(): void {
     console.log('🛑 ALARM CARD: Dismiss button clicked');
-    if (this.entities.dismissButton) {
-      console.log('🛑 ALARM CARD: Pressing dismiss button:', this.entities.dismissButton.entity_id);
-      this.hass.callService('button', 'press', {
-        entity_id: this.entities.dismissButton.entity_id,
-      });
-    } else {
-      console.error('🛑 ALARM CARD: Cannot dismiss - no dismiss button entity found');
+    if (!this.entities.main) {
+      console.error('🛑 ALARM CARD: Cannot dismiss - no main entity found');
+      return;
+    }
+
+    console.log('🛑 ALARM CARD: Calling dismiss service:', this.entities.main.entity_id);
+    this.hass.callService('alarm_clock', 'dismiss', {
+      entity_id: this.entities.main.entity_id,
+    });
+  }
+
+  private _formatTime12Hour(time24: string): string {
+    if (!time24 || time24 === 'off') return time24;
+    
+    try {
+      // Parse the 24-hour time (e.g., "07:00" or "20:30")
+      const [hoursStr, minutesStr] = time24.split(':');
+      const hours24 = parseInt(hoursStr, 10);
+      const minutes = parseInt(minutesStr, 10);
+      
+      // Convert to 12-hour format
+      const isPM = hours24 >= 12;
+      const hours12 = hours24 === 0 ? 12 : hours24 > 12 ? hours24 - 12 : hours24;
+      const ampm = isPM ? 'PM' : 'AM';
+      
+      // Format without leading zero for hours, but keep it for minutes
+      const minutesFormatted = minutes.toString().padStart(2, '0');
+      
+      return `${hours12}:${minutesFormatted} ${ampm}`;
+    } catch (error) {
+      // If parsing fails, return original time
+      return time24;
     }
   }
 
@@ -817,7 +859,7 @@ window.customCards.push({
 });
 
 console.info(
-  `%c  ALARM-CLOCK-CARD  %c  Version 1.0.0  `,
+  `%c  ALARM-CLOCK-CARD  %c  Version 1.1.0  `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray'
 );
