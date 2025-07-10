@@ -3,7 +3,7 @@
   "content_in_root": false,
   "domains": ["alarm_clock"],
   "javascript": [
-    "ui/dist/alarm-clock-card.js"
+    "www/alarm-clock-card.js"
   ],
   "render_readme": true
 }

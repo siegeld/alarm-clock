@@ -156,7 +156,7 @@ data:
 
 ## 🎨 Using the Lovelace Card
 
-The integration automatically includes a beautiful custom Lovelace card. After installation, add it to your dashboard:
+For the companion Lovelace card (available separately), after installation add it to your dashboard:
 
 ### Basic Configuration
 ```yaml
