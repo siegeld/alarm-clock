@@ -1,6 +1,6 @@
 {
   "name": "alarm-clock-card",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "description": "A Lovelace card for Home Assistant alarm clock integration",
   "main": "dist/alarm-clock-card.js",
   "scripts": {
@@ -35,10 +35,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/alarm-clock"
+    "url": "https://github.com/siegeld/alarm-clock"
   },
   "bugs": {
-    "url": "https://github.com/your-username/alarm-clock/issues"
+    "url": "https://github.com/siegeld/alarm-clock/issues"
   },
-  "homepage": "https://github.com/your-username/alarm-clock#readme"
+  "homepage": "https://github.com/siegeld/alarm-clock#readme"
 }
