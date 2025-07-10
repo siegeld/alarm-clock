@@ -522,16 +522,19 @@ class AlarmClockEntity(SensorEntity):
                 }
             )
             
-            # Reset current alarm state
+            # Immediately stop current alarm
+            self._state = ALARM_STATE_OFF
             self._cancel_all_timers()
             self._reset_execution_flags()
             self._snooze_count = 0
             self._snooze_until = None
             _LOGGER.info("Alarm dismissed manually")
             
-            # Recalculate next alarm occurrence (for recurring alarms)
-            await self._async_update_alarm_state()
+            # Write the dismiss state immediately
             self.async_write_ha_state()
+            
+            # Then recalculate next alarm occurrence (for recurring alarms)
+            await self._async_update_alarm_state()
             
             # Update sensors to show new next alarm
             await self._async_update_related_entities()
@@ -550,6 +553,9 @@ class AlarmClockEntity(SensorEntity):
                 }
             )
             
+            # Immediately stop current alarm
+            self._state = ALARM_STATE_OFF
+            
             # Cancel only snooze and auto-dismiss timers, keep post-alarm if running
             if self._snooze_timer:
                 self._snooze_timer()
@@ -564,9 +570,11 @@ class AlarmClockEntity(SensorEntity):
             _LOGGER.info("Alarm auto-dismissed after %d minutes", 
                         self.config.get(CONF_AUTO_DISMISS_MINUTES, 30))
             
-            # Recalculate next alarm occurrence (for recurring alarms)
-            await self._async_update_alarm_state()
+            # Write the dismiss state immediately
             self.async_write_ha_state()
+            
+            # Then recalculate next alarm occurrence (for recurring alarms)
+            await self._async_update_alarm_state()
             
             # Update sensors to show new next alarm
             await self._async_update_related_entities()
