@@ -7,8 +7,8 @@
   "hide_default_branch": true,
   "render_readme": true,
   "country": ["US", "CA", "GB", "AU", "NZ", "DE", "FR", "ES", "IT", "NL", "BE", "SE", "DK", "NO", "FI"],
-  "content_in_root": true,
+  "content_in_root": false,
   "javascript": [
-    "alarm-clock-card.js"
+    "ui/dist/alarm-clock-card.js"
   ]
 }

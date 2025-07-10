@@ -5,8 +5,8 @@ module.exports = {
   mode: 'production',
   output: {
     filename: 'alarm-clock-card.js',
-    path: path.resolve(__dirname, '..'),
-    clean: false,
+    path: path.resolve(__dirname, 'dist'),
+    clean: true,
   },
   module: {
     rules: [
