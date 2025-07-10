@@ -6,6 +6,7 @@ from homeassistant.components.number import NumberEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     DOMAIN,
@@ -15,7 +16,7 @@ from .const import (
     DEFAULT_MAX_SNOOZES,
     DEFAULT_AUTO_DISMISS_MINUTES,
 )
-from .alarm_clock import AlarmClockEntity
+from .coordinator import AlarmClockCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,51 +27,51 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the number platform."""
-    # Get the main alarm clock entity
+    # Get the coordinator
     entry_data = hass.data[DOMAIN].get(config_entry.entry_id)
     if not entry_data:
         _LOGGER.error("Entry data not found")
         return
     
-    alarm_entity = entry_data.get("entity")
-    if not alarm_entity:
-        _LOGGER.error("Main alarm clock entity not found")
+    coordinator = entry_data.get("coordinator")
+    if not coordinator:
+        _LOGGER.error("Coordinator not found")
         return
 
     # Create number entities
     entities = [
-        PreAlarmMinutesNumber(alarm_entity, config_entry),
-        PostAlarmMinutesNumber(alarm_entity, config_entry),
-        SnoozeDurationNumber(alarm_entity, config_entry),
-        MaxSnoozesNumber(alarm_entity, config_entry),
-        AutoDismissMinutesNumber(alarm_entity, config_entry),
+        PreAlarmMinutesNumber(coordinator, config_entry),
+        PostAlarmMinutesNumber(coordinator, config_entry),
+        SnoozeDurationNumber(coordinator, config_entry),
+        MaxSnoozesNumber(coordinator, config_entry),
+        AutoDismissMinutesNumber(coordinator, config_entry),
     ]
     
     async_add_entities(entities)
 
 
-class PreAlarmMinutesNumber(NumberEntity):
+class PreAlarmMinutesNumber(CoordinatorEntity, NumberEntity):
     """Number entity for pre-alarm minutes setting."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the number entity."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
     def name(self) -> str:
         """Return the name of the number entity."""
-        return f"{self._alarm_entity.name} Pre-alarm Minutes"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Pre-alarm Minutes"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_pre_alarm_minutes"
+        return f"{self.coordinator.unique_id}_pre_alarm_minutes"
 
     @property
     def native_value(self) -> float:
         """Return the current value."""
-        return self._config_entry.data.get("pre_alarm_minutes", DEFAULT_PRE_ALARM_MINUTES)
+        return self.coordinator.config.get("pre_alarm_minutes", DEFAULT_PRE_ALARM_MINUTES)
 
     @property
     def native_min_value(self) -> float:
@@ -95,13 +96,7 @@ class PreAlarmMinutesNumber(NumberEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
@@ -114,33 +109,32 @@ class PreAlarmMinutesNumber(NumberEntity):
             self._config_entry,
             data=fresh_data
         )
-        # Update the alarm entity config with fresh data
-        self._alarm_entity.config = fresh_data
-        self.async_write_ha_state()
+        # Update the coordinator config with fresh data
+        self.coordinator.config = fresh_data
 
 
-class AutoDismissMinutesNumber(NumberEntity):
+class AutoDismissMinutesNumber(CoordinatorEntity, NumberEntity):
     """Number entity for auto-dismiss minutes setting."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the number entity."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
     def name(self) -> str:
         """Return the name of the number entity."""
-        return f"{self._alarm_entity.name} Auto Dismiss Minutes"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Auto Dismiss Minutes"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_auto_dismiss_minutes"
+        return f"{self.coordinator.unique_id}_auto_dismiss_minutes"
 
     @property
     def native_value(self) -> float:
         """Return the current value."""
-        return self._config_entry.data.get("auto_dismiss_minutes", DEFAULT_AUTO_DISMISS_MINUTES)
+        return self.coordinator.config.get("auto_dismiss_minutes", DEFAULT_AUTO_DISMISS_MINUTES)
 
     @property
     def native_min_value(self) -> float:
@@ -170,13 +164,7 @@ class AutoDismissMinutesNumber(NumberEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
@@ -189,33 +177,32 @@ class AutoDismissMinutesNumber(NumberEntity):
             self._config_entry,
             data=fresh_data
         )
-        # Update the alarm entity config with fresh data
-        self._alarm_entity.config = fresh_data
-        self.async_write_ha_state()
+        # Update the coordinator config with fresh data
+        self.coordinator.config = fresh_data
 
 
-class PostAlarmMinutesNumber(NumberEntity):
+class PostAlarmMinutesNumber(CoordinatorEntity, NumberEntity):
     """Number entity for post-alarm minutes setting."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the number entity."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
     def name(self) -> str:
         """Return the name of the number entity."""
-        return f"{self._alarm_entity.name} Post-alarm Minutes"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Post-alarm Minutes"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_post_alarm_minutes"
+        return f"{self.coordinator.unique_id}_post_alarm_minutes"
 
     @property
     def native_value(self) -> float:
         """Return the current value."""
-        return self._config_entry.data.get("post_alarm_minutes", DEFAULT_POST_ALARM_MINUTES)
+        return self.coordinator.config.get("post_alarm_minutes", DEFAULT_POST_ALARM_MINUTES)
 
     @property
     def native_min_value(self) -> float:
@@ -240,13 +227,7 @@ class PostAlarmMinutesNumber(NumberEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
@@ -259,33 +240,32 @@ class PostAlarmMinutesNumber(NumberEntity):
             self._config_entry,
             data=fresh_data
         )
-        # Update the alarm entity config with fresh data
-        self._alarm_entity.config = fresh_data
-        self.async_write_ha_state()
+        # Update the coordinator config with fresh data
+        self.coordinator.config = fresh_data
 
 
-class SnoozeDurationNumber(NumberEntity):
+class SnoozeDurationNumber(CoordinatorEntity, NumberEntity):
     """Number entity for snooze duration setting."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the number entity."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
     def name(self) -> str:
         """Return the name of the number entity."""
-        return f"{self._alarm_entity.name} Snooze Duration"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Snooze Duration"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_snooze_duration"
+        return f"{self.coordinator.unique_id}_snooze_duration"
 
     @property
     def native_value(self) -> float:
         """Return the current value."""
-        return self._config_entry.data.get("snooze_duration", DEFAULT_SNOOZE_DURATION)
+        return self.coordinator.config.get("snooze_duration", DEFAULT_SNOOZE_DURATION)
 
     @property
     def native_min_value(self) -> float:
@@ -315,13 +295,7 @@ class SnoozeDurationNumber(NumberEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
@@ -334,33 +308,32 @@ class SnoozeDurationNumber(NumberEntity):
             self._config_entry,
             data=fresh_data
         )
-        # Update the alarm entity config with fresh data
-        self._alarm_entity.config = fresh_data
-        self.async_write_ha_state()
+        # Update the coordinator config with fresh data
+        self.coordinator.config = fresh_data
 
 
-class MaxSnoozesNumber(NumberEntity):
+class MaxSnoozesNumber(CoordinatorEntity, NumberEntity):
     """Number entity for maximum snoozes setting."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the number entity."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
     def name(self) -> str:
         """Return the name of the number entity."""
-        return f"{self._alarm_entity.name} Max Snoozes"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Max Snoozes"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_max_snoozes"
+        return f"{self.coordinator.unique_id}_max_snoozes"
 
     @property
     def native_value(self) -> float:
         """Return the current value."""
-        return self._config_entry.data.get("max_snoozes", DEFAULT_MAX_SNOOZES)
+        return self.coordinator.config.get("max_snoozes", DEFAULT_MAX_SNOOZES)
 
     @property
     def native_min_value(self) -> float:
@@ -385,13 +358,7 @@ class MaxSnoozesNumber(NumberEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the value."""
@@ -404,6 +371,5 @@ class MaxSnoozesNumber(NumberEntity):
             self._config_entry,
             data=fresh_data
         )
-        # Update the alarm entity config with fresh data
-        self._alarm_entity.config = fresh_data
-        self.async_write_ha_state()
+        # Update the coordinator config with fresh data
+        self.coordinator.config = fresh_data

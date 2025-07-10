@@ -1,90 +1,80 @@
-# Release v1.0.0 - Home Assistant Alarm Clock Integration
+# Release v1.3.0 - Home Assistant Alarm Clock Integration
 
-## 🎉 Initial Release - July 8, 2025
+## 🚀 Major Architecture Refactoring - July 10, 2025
 
-This is the first stable release of the comprehensive Home Assistant Alarm Clock Integration.
+This is a major release featuring complete coordinator refactoring and real-time responsiveness improvements.
 
-## 📦 What's Included
+## 🚀 What's New in v1.3.0
 
-### Core Integration Files
-- **30 files** committed with **3,370 lines** of code
-- Complete Home Assistant custom component structure
-- HACS compatibility with proper metadata
-- Comprehensive documentation and examples
+### Home Assistant Coordinator Pattern
+- **Complete Architecture Refactoring** - Migrated to proper DataUpdateCoordinator pattern
+- **Centralized State Management** - All alarm logic now in AlarmClockCoordinator
+- **Thin Entity Wrappers** - Entities just expose coordinator data via standard HA patterns
+- **Standard HA Structure** - Follows Home Assistant best practices
 
-### Git Repository
-- **Initial Commit**: `a553913` - Complete feature set
-- **Release Tag**: `v1.0.0` - Production ready
-- **Changelog**: Detailed feature documentation
-- **README**: Installation and usage guide
+### Real-Time Responsiveness
+- **1-Second Update Interval** - Changed from 30-second to 1-second coordinator updates
+- **Immediate UI Response** - Card responds in ~1 second instead of 15 seconds
+- **Instant Service Call Feedback** - All interactions trigger immediate coordinator refresh
+- **Double-Layer Responsiveness** - Both backend push and frontend pull
 
-## 🚀 Quick Start
+### Unique ID-Based Entity Discovery
+- **Rename-Proof Architecture** - Uses unique_id patterns instead of entity names
+- **Clean Unique ID Patterns** - Simplified from `alarm_clock_{entry_id}` to `{entry_id}`
+- **Registry-Based Discovery** - Works even when entities don't have states yet
+- **Future-Proof Design** - Entity renames won't break functionality
 
-1. **Installation**:
-   ```bash
-   # Copy to custom_components
-   cp -r custom_components/alarm_clock /config/custom_components/
-   
-   # Restart Home Assistant
-   # Add integration via UI: Settings > Integrations > Add > "Alarm Clock"
-   ```
-
-2. **Basic Setup**:
-   - Set alarm time via time picker
-   - Enable desired days with switches
-   - Configure alarm script entity
-   - Enable alarm with main switch
-
-3. **Advanced Features**:
-   - Configure pre-alarm script for gradual wake-up
-   - Set post-alarm script for automation
-   - Adjust snooze duration and limits
-   - Set auto-dismiss timeout
-
-## 📊 Dashboard Integration
-
-Add these entities to your dashboard:
-- `sensor.alarm_clock_time_until_alarm` - Live countdown
-- `sensor.alarm_clock_next_alarm` - Next alarm time
-- `time.alarm_clock_time` - Time picker
-- `button.alarm_clock_snooze` - Snooze action
-- `button.alarm_clock_dismiss` - Dismiss action
+### Bug Fixes
+- **Fixed Entity Discovery** - Resolved "Could not find coordinator" errors
+- **Registry vs State Handling** - Fixed entities existing in registry but not having states
+- **UI Responsiveness** - Eliminated 15-second delays on button clicks
+- **Platform Detection** - Fixed entity platform detection issues
 
 ## 🔧 Version Information
 
-- **Release Date**: July 8, 2025
-- **Version**: 1.0.0
+- **Release Date**: July 10, 2025
+- **Version**: 1.3.0
 - **Compatibility**: Home Assistant 2023.4.0+
 - **Python**: 3.11+
 - **Status**: Production Ready
 
+## 📋 Migration from v1.2.x
+
+### Required Steps
+1. **Restart Home Assistant** - Required to apply coordinator changes
+2. **Hard Refresh Browser** - Press Ctrl+F5 to load updated card
+3. **No Configuration Changes** - All existing settings preserved
+
+### What's Improved
+- ✅ **Instant Responsiveness** - Card responds in ~1 second instead of 15 seconds
+- ✅ **Rename-Proof Design** - Entity renames won't break card functionality
+- ✅ **Proper HA Architecture** - Follows Home Assistant coordinator best practices
+- ✅ **Real-Time Updates** - Live status monitoring with 1-second precision
+- ✅ **Better Error Handling** - More robust entity discovery and state management
+
 ## 📋 Release Checklist
 
-- ✅ All core features implemented and tested
-- ✅ State persistence working correctly
-- ✅ Real-time updates with 1-second precision
-- ✅ Button availability issues resolved
-- ✅ Auto-dismiss and snooze countdown implemented
-- ✅ Time picker persistence fixed
-- ✅ Comprehensive logging and events
-- ✅ HACS compatibility verified
-- ✅ Documentation complete
-- ✅ Git repository tagged
-- ✅ Changelog created
+- ✅ DataUpdateCoordinator pattern implemented
+- ✅ Unique ID-based entity discovery working
+- ✅ 1-second real-time updates active
+- ✅ Immediate service call refresh working
+- ✅ Entity registry fallback handling
+- ✅ Browser card compatibility maintained
+- ✅ State persistence preserved
+- ✅ All entity types migrated to coordinator
+- ✅ Documentation updated
+- ✅ Version bumped to 1.3.0
 
-## 🎯 Ready for Production
+## 🎯 Performance Impact
 
-This release has been thoroughly developed and tested. All requested features are implemented and working correctly:
+This release significantly improves user experience:
 
-- Time persistence across restarts ✅
-- Real-time countdown updates ✅
-- Smart snooze countdown switching ✅
-- Always-available buttons ✅
-- Auto-dismiss functionality ✅
-- Independent post-alarm timing ✅
-
-The integration is ready for production use in Home Assistant environments.
+- **Before**: 15-second delay when clicking "Enable Alarm"
+- **After**: ~1-second response time with real-time updates
+- **Architecture**: Now follows proper Home Assistant patterns
+- **Maintainability**: Cleaner code structure for future enhancements
+- **Reliability**: Better error handling and entity discovery
 
 ---
 
-**Next Steps**: Upload to GitHub, publish HACS release, create documentation site
+**Upgrade Recommendation**: Highly recommended for all users - provides major performance and reliability improvements while maintaining full backward compatibility.

@@ -5,6 +5,79 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-07-10
+
+### 🚀 Major Architecture Refactoring
+
+#### Home Assistant Coordinator Pattern
+- **Migrated to DataUpdateCoordinator** - Complete refactoring to use proper HA coordinator pattern
+- **Centralized State Management** - All alarm logic now centralized in AlarmClockCoordinator
+- **Thin Entity Wrappers** - Entities now just expose coordinator data via standard HA patterns
+- **Standard HA Structure** - Follows Home Assistant best practices for integration architecture
+
+#### Unique ID-Based Entity Discovery
+- **Rename-Proof Architecture** - Card now uses unique_id patterns instead of entity names
+- **Clean Unique ID Patterns** - Simplified from `alarm_clock_{entry_id}` to just `{entry_id}` for main entity
+- **Registry-Based Discovery** - Works even when entities don't have states yet
+- **Future-Proof Design** - Entity renames won't break card functionality
+
+#### Real-Time Responsiveness
+- **1-Second Update Interval** - Changed coordinator from 30-second to 1-second updates
+- **Immediate Service Call Refresh** - All service calls trigger instant coordinator refresh
+- **Responsive UI Updates** - Card now responds immediately to button clicks (<1 second)
+- **Double-Layer Responsiveness** - Both backend push and frontend pull for instant feedback
+
+### 🛠️ Bug Fixes
+
+#### Entity Discovery Issues
+- **Fixed Card Entity Detection** - Resolved "Could not find coordinator" errors
+- **Registry vs State Handling** - Fixed entities existing in registry but not having states
+- **Fallback Entity Values** - Added fallback handling for entities without states
+- **Platform Detection** - Fixed entity platform detection issues
+
+#### UI Responsiveness
+- **Eliminated 15-Second Delays** - Fixed slow response when clicking "Enable Alarm"
+- **Immediate Visual Feedback** - All card interactions now provide instant feedback
+- **Force Refresh Logic** - Added immediate refresh after all service calls
+
+### ✨ Technical Improvements
+
+#### Code Architecture
+- **Proper HA Patterns** - Now follows Home Assistant coordinator best practices
+- **Single Source of Truth** - Coordinator manages all state, entities just expose it
+- **Better Error Handling** - Enhanced error handling and fallback mechanisms
+- **Cleaner Entity Structure** - Simplified entity relationships and dependencies
+
+#### Performance Optimizations
+- **Real-Time Updates** - 1-second coordinator refresh for live status monitoring
+- **Efficient State Propagation** - Optimized data flow between coordinator and entities
+- **Reduced Entity Coupling** - Entities no longer directly communicate with each other
+
+### 🔧 Breaking Changes
+
+#### Internal Architecture
+- **Coordinator Required** - Entities now require coordinator for proper operation
+- **Entity Dependencies** - Some entity initialization order changes
+- **Unique ID Format** - Main entity unique_id simplified (internal change)
+
+### 📝 Migration Notes
+
+- **Restart Required** - Restart Home Assistant after updating to apply coordinator changes
+- **Browser Refresh** - Hard refresh browser (Ctrl+F5) to load updated card
+- **No Config Changes** - All existing alarm settings preserved
+- **Performance Improvement** - Should notice much faster UI responsiveness
+
+### 🎯 What's Improved
+
+- ✅ **Instant Responsiveness** - Card responds in ~1 second instead of 15 seconds
+- ✅ **Rename-Proof Design** - Renaming entities won't break card functionality  
+- ✅ **Proper HA Architecture** - Follows Home Assistant coordinator best practices
+- ✅ **Real-Time Updates** - Live status monitoring with 1-second precision
+- ✅ **Better Error Handling** - More robust entity discovery and state management
+- ✅ **Future-Proof** - Clean architecture for easier maintenance and features
+
+---
+
 ## [1.1.3] - 2025-07-09
 
 ### 🚨 Critical Bug Fix

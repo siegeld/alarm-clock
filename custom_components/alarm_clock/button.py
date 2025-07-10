@@ -6,9 +6,10 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, ALARM_STATE_RINGING, ALARM_STATE_SNOOZED
-from .alarm_clock import AlarmClockEntity
+from .coordinator import AlarmClockCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,43 +20,43 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the button platform."""
-    # Get the main alarm clock entity
+    # Get the coordinator
     entry_data = hass.data[DOMAIN].get(config_entry.entry_id)
     if not entry_data:
         _LOGGER.error("Entry data not found")
         return
     
-    alarm_entity = entry_data.get("entity")
-    if not alarm_entity:
-        _LOGGER.error("Main alarm clock entity not found")
+    coordinator = entry_data.get("coordinator")
+    if not coordinator:
+        _LOGGER.error("Coordinator not found")
         return
 
     # Create button entities
     entities = [
-        SnoozeButton(alarm_entity, config_entry),
-        DismissButton(alarm_entity, config_entry),
+        SnoozeButton(coordinator, config_entry),
+        DismissButton(coordinator, config_entry),
     ]
     
     async_add_entities(entities)
 
 
-class SnoozeButton(ButtonEntity):
+class SnoozeButton(CoordinatorEntity, ButtonEntity):
     """Button to snooze the alarm."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the button."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
     def name(self) -> str:
         """Return the name of the button."""
-        return f"{self._alarm_entity.name} Snooze"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Snooze"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_snooze_button"
+        return f"{self.coordinator.unique_id}_snooze_button"
 
     @property
     def icon(self) -> str:
@@ -70,19 +71,13 @@ class SnoozeButton(ButtonEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Return the state attributes."""
-        if self._alarm_entity.state == ALARM_STATE_RINGING:
-            snooze_info = self._alarm_entity.get_snooze_info()
+        if self.coordinator.get_state() == ALARM_STATE_RINGING:
+            snooze_info = self.coordinator.get_snooze_info()
             return {
                 "snooze_count": snooze_info["count"],
                 "max_snoozes": snooze_info["max"],
@@ -93,27 +88,27 @@ class SnoozeButton(ButtonEntity):
 
     async def async_press(self) -> None:
         """Handle the button press."""
-        if self._alarm_entity.state == ALARM_STATE_RINGING:
-            await self._alarm_entity.async_snooze()
+        if self.coordinator.get_state() == ALARM_STATE_RINGING:
+            await self.coordinator.async_snooze()
 
 
-class DismissButton(ButtonEntity):
+class DismissButton(CoordinatorEntity, ButtonEntity):
     """Button to dismiss the alarm."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the button."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
     def name(self) -> str:
         """Return the name of the button."""
-        return f"{self._alarm_entity.name} Dismiss"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Dismiss"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_dismiss_button"
+        return f"{self.coordinator.unique_id}_dismiss_button"
 
     @property
     def icon(self) -> str:
@@ -128,15 +123,9 @@ class DismissButton(ButtonEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     async def async_press(self) -> None:
         """Handle the button press."""
-        if self._alarm_entity.state in [ALARM_STATE_RINGING, ALARM_STATE_SNOOZED]:
-            await self._alarm_entity.async_dismiss()
+        if self.coordinator.get_state() in [ALARM_STATE_RINGING, ALARM_STATE_SNOOZED]:
+            await self.coordinator.async_dismiss()

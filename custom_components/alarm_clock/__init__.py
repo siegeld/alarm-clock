@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers import device_registry as dr
 
 from .const import (
     DOMAIN,
@@ -16,6 +17,7 @@ from .const import (
     SERVICE_SET_ALARM,
     SERVICE_TOGGLE_DAY,
 )
+from .coordinator import AlarmClockCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,19 +50,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     hass.data.setdefault(DOMAIN, {})
     
-    # Import and create the main alarm clock entity
-    from .alarm_clock import AlarmClockEntity
+    # Create or get device
+    device_registry = dr.async_get(hass)
+    device_entry = device_registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=entry.data.get("name", "Alarm Clock"),
+        manufacturer="Alarm Clock Integration",
+        model="Alarm Clock",
+        sw_version="1.2.0",
+    )
     
-    _LOGGER.error("ALARM CLOCK INTEGRATION: Creating AlarmClockEntity")
+    # Create the coordinator
+    coordinator = AlarmClockCoordinator(
+        hass=hass,
+        config=entry.data,
+        entry_id=entry.entry_id,
+        device_id=device_entry.id,
+    )
     
-    # Create the main alarm clock entity
-    alarm_entity = AlarmClockEntity(hass, entry.data, entry.entry_id)
-    
-    # Store the config entry data and main entity
+    # Store the coordinator
     hass.data[DOMAIN][entry.entry_id] = {
-        "data": entry.data,
-        "entity": alarm_entity
+        "coordinator": coordinator,
+        "device_id": device_entry.id,
     }
+    
+    # Set up the coordinator
+    await coordinator.async_setup()
     
     _LOGGER.error("ALARM CLOCK INTEGRATION: Setting up platforms: %s", PLATFORMS)
     
@@ -77,6 +93,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
+    # Get the coordinator to shut it down properly
+    entry_data = hass.data[DOMAIN].get(entry.entry_id)
+    if entry_data and "coordinator" in entry_data:
+        coordinator = entry_data["coordinator"]
+        await coordinator.async_shutdown()
+    
     # Unload platforms
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     
@@ -89,64 +111,107 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def _async_register_services(hass: HomeAssistant) -> None:
     """Register services for the alarm clock."""
     
-    def _find_alarm_entity(entity_id: str):
-        """Find the alarm clock entity by entity_id."""
+    def _find_coordinator_by_device_id(device_id: str):
+        """Find coordinator by device_id."""
         for entry_id, entry_data in hass.data[DOMAIN].items():
-            if isinstance(entry_data, dict) and "entity" in entry_data:
-                entity = entry_data["entity"]
-                if entity and entity.entity_id == entity_id:
-                    return entity
+            if isinstance(entry_data, dict) and "coordinator" in entry_data:
+                if entry_data.get("device_id") == device_id:
+                    return entry_data["coordinator"]
+        return None
+    
+    def _find_coordinator_by_entity_id(entity_id: str):
+        """Find coordinator by entity_id (for backward compatibility)."""
+        from homeassistant.helpers import entity_registry as er
+        
+        entity_registry = er.async_get(hass)
+        entity_entry = entity_registry.async_get(entity_id)
+        
+        if entity_entry and entity_entry.device_id:
+            return _find_coordinator_by_device_id(entity_entry.device_id)
         return None
     
     async def async_snooze_service(call):
         """Handle snooze service call."""
+        device_id = call.data.get("device_id")
         entity_id = call.data.get("entity_id")
-        if entity_id:
-            entity = _find_alarm_entity(entity_id)
-            if entity:
-                await entity.async_snooze()
-            else:
-                _LOGGER.error("Alarm clock entity not found: %s", entity_id)
+        
+        coordinator = None
+        if device_id:
+            coordinator = _find_coordinator_by_device_id(device_id)
+        elif entity_id:
+            coordinator = _find_coordinator_by_entity_id(entity_id)
+        
+        if coordinator:
+            await coordinator.async_snooze()
+        else:
+            _LOGGER.error("Alarm clock coordinator not found for device_id: %s, entity_id: %s", device_id, entity_id)
     
     async def async_dismiss_service(call):
         """Handle dismiss service call."""
+        device_id = call.data.get("device_id")
         entity_id = call.data.get("entity_id")
-        if entity_id:
-            entity = _find_alarm_entity(entity_id)
-            if entity:
-                await entity.async_dismiss()
-            else:
-                _LOGGER.error("Alarm clock entity not found: %s", entity_id)
+        
+        coordinator = None
+        if device_id:
+            coordinator = _find_coordinator_by_device_id(device_id)
+        elif entity_id:
+            coordinator = _find_coordinator_by_entity_id(entity_id)
+        
+        if coordinator:
+            await coordinator.async_dismiss()
+        else:
+            _LOGGER.error("Alarm clock coordinator not found for device_id: %s, entity_id: %s", device_id, entity_id)
     
     async def async_set_alarm_service(call):
         """Handle set alarm service call."""
+        device_id = call.data.get("device_id")
         entity_id = call.data.get("entity_id")
         time_str = call.data.get("time")
-        if entity_id and time_str:
-            entity = _find_alarm_entity(entity_id)
-            if entity:
-                await entity.async_set_alarm_time(time_str)
-            else:
-                _LOGGER.error("Alarm clock entity not found: %s", entity_id)
+        
+        if not time_str:
+            _LOGGER.error("Time parameter is required")
+            return
+        
+        coordinator = None
+        if device_id:
+            coordinator = _find_coordinator_by_device_id(device_id)
+        elif entity_id:
+            coordinator = _find_coordinator_by_entity_id(entity_id)
+        
+        if coordinator:
+            await coordinator.async_set_alarm_time(time_str)
+        else:
+            _LOGGER.error("Alarm clock coordinator not found for device_id: %s, entity_id: %s", device_id, entity_id)
     
     async def async_toggle_day_service(call):
         """Handle toggle day service call."""
+        device_id = call.data.get("device_id")
         entity_id = call.data.get("entity_id")
         day = call.data.get("day")
-        if entity_id and day:
-            entity = _find_alarm_entity(entity_id)
-            if entity:
-                await entity.async_toggle_day(day)
-            else:
-                _LOGGER.error("Alarm clock entity not found: %s", entity_id)
+        
+        if not day:
+            _LOGGER.error("Day parameter is required")
+            return
+        
+        coordinator = None
+        if device_id:
+            coordinator = _find_coordinator_by_device_id(device_id)
+        elif entity_id:
+            coordinator = _find_coordinator_by_entity_id(entity_id)
+        
+        if coordinator:
+            await coordinator.async_toggle_day(day)
+        else:
+            _LOGGER.error("Alarm clock coordinator not found for device_id: %s, entity_id: %s", device_id, entity_id)
     
-    # Register services
+    # Register services with support for both device_id and entity_id
     hass.services.async_register(
         DOMAIN,
         SERVICE_SNOOZE,
         async_snooze_service,
         schema=vol.Schema({
-            vol.Required("entity_id"): cv.entity_id,
+            vol.Optional("device_id"): cv.string,
+            vol.Optional("entity_id"): cv.entity_id,
         }),
     )
     
@@ -155,7 +220,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         SERVICE_DISMISS,
         async_dismiss_service,
         schema=vol.Schema({
-            vol.Required("entity_id"): cv.entity_id,
+            vol.Optional("device_id"): cv.string,
+            vol.Optional("entity_id"): cv.entity_id,
         }),
     )
     
@@ -164,7 +230,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         SERVICE_SET_ALARM,
         async_set_alarm_service,
         schema=vol.Schema({
-            vol.Required("entity_id"): cv.entity_id,
+            vol.Optional("device_id"): cv.string,
+            vol.Optional("entity_id"): cv.entity_id,
             vol.Required("time"): cv.string,
         }),
     )
@@ -174,7 +241,8 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         SERVICE_TOGGLE_DAY,
         async_toggle_day_service,
         schema=vol.Schema({
-            vol.Required("entity_id"): cv.entity_id,
+            vol.Optional("device_id"): cv.string,
+            vol.Optional("entity_id"): cv.entity_id,
             vol.Required("day"): cv.string,
         }),
     )

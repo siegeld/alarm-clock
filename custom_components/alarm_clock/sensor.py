@@ -8,6 +8,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -20,7 +21,8 @@ from .const import (
     ALARM_STATE_RINGING,
     ALARM_STATE_SNOOZED,
 )
-from .alarm_clock import AlarmClockEntity
+from .coordinator import AlarmClockCoordinator
+from .entity import AlarmClockEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,57 +33,50 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the sensor platform."""
-    # Get the main alarm clock entity
+    # Get the coordinator
     entry_data = hass.data[DOMAIN].get(config_entry.entry_id)
     if not entry_data:
         _LOGGER.error("Entry data not found")
         return
     
-    alarm_entity = entry_data.get("entity")
-    if not alarm_entity:
-        _LOGGER.error("Main alarm clock entity not found")
+    coordinator = entry_data.get("coordinator")
+    if not coordinator:
+        _LOGGER.error("Coordinator not found")
         return
 
-    # Create sensor entities
-    next_alarm_sensor = NextAlarmSensor(alarm_entity, config_entry)
-    status_sensor = AlarmStatusSensor(alarm_entity, config_entry)
-    time_until_sensor = TimeUntilAlarmSensor(alarm_entity, config_entry)
-    
-    # Register sensor entities with the main alarm entity for updates
-    alarm_entity._sensor_entities = [next_alarm_sensor, status_sensor, time_until_sensor]
-    
+    # Create sensor entities including main entity
     entities = [
-        alarm_entity,  # Add the main alarm clock entity
-        next_alarm_sensor,
-        status_sensor,
-        time_until_sensor,
+        AlarmClockEntity(coordinator, config_entry),  # Main entity
+        NextAlarmSensor(coordinator, config_entry),
+        AlarmStatusSensor(coordinator, config_entry),
+        TimeUntilAlarmSensor(coordinator, config_entry),
     ]
     
     async_add_entities(entities)
 
 
-class NextAlarmSensor(SensorEntity):
+class NextAlarmSensor(CoordinatorEntity, SensorEntity):
     """Sensor that shows the next alarm time."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the sensor."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
     def name(self) -> str:
         """Return the name of the sensor."""
-        return f"{self._alarm_entity.name} Next Alarm"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Next Alarm"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_{ENTITY_ID_NEXT_ALARM}"
+        return f"{self.coordinator.unique_id}_{ENTITY_ID_NEXT_ALARM}"
 
     @property
     def native_value(self) -> Optional[datetime]:
         """Return the state of the sensor."""
-        return self._alarm_entity.get_next_alarm()
+        return self.coordinator.get_next_alarm()
 
     @property
     def icon(self) -> str:
@@ -96,18 +91,12 @@ class NextAlarmSensor(SensorEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Return the state attributes."""
-        next_alarm = self._alarm_entity.get_next_alarm()
+        next_alarm = self.coordinator.get_next_alarm()
         if next_alarm:
             return {
                 "next_alarm_date": next_alarm.strftime("%Y-%m-%d"),
@@ -117,33 +106,33 @@ class NextAlarmSensor(SensorEntity):
         return {}
 
 
-class AlarmStatusSensor(SensorEntity):
+class AlarmStatusSensor(CoordinatorEntity, SensorEntity):
     """Sensor that shows the current alarm status."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the sensor."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
 
     @property
     def name(self) -> str:
         """Return the name of the sensor."""
-        return f"{self._alarm_entity.name} Status"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Status"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_{ENTITY_ID_ALARM_STATUS}"
+        return f"{self.coordinator.unique_id}_{ENTITY_ID_ALARM_STATUS}"
 
     @property
     def native_value(self) -> str:
         """Return the state of the sensor."""
-        return self._alarm_entity.state
+        return self.coordinator.get_state()
 
     @property
     def icon(self) -> str:
         """Return the icon to use in the frontend."""
-        state = self._alarm_entity.state
+        state = self.coordinator.get_state()
         if state == ALARM_STATE_RINGING:
             return "mdi:alarm-bell"
         elif state == ALARM_STATE_SNOOZED:
@@ -156,13 +145,7 @@ class AlarmStatusSensor(SensorEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
@@ -170,19 +153,19 @@ class AlarmStatusSensor(SensorEntity):
         attributes = {}
         
         # Add alarm enabled status
-        attributes["alarm_enabled"] = self._alarm_entity.is_alarm_enabled()
+        attributes["alarm_enabled"] = self.coordinator.get_alarm_enabled()
         
         # Add enabled days
-        attributes["enabled_days"] = list(self._alarm_entity.get_enabled_days())
+        attributes["enabled_days"] = list(self.coordinator.get_enabled_days())
         
         # Add alarm time
-        alarm_time = self._alarm_entity.get_alarm_time()
+        alarm_time = self.coordinator.get_alarm_time()
         if alarm_time:
             attributes["alarm_time"] = alarm_time.strftime("%H:%M")
         
         # Add snooze info if relevant
-        if self._alarm_entity.state in [ALARM_STATE_RINGING, ALARM_STATE_SNOOZED]:
-            snooze_info = self._alarm_entity.get_snooze_info()
+        if self.coordinator.get_state() in [ALARM_STATE_RINGING, ALARM_STATE_SNOOZED]:
+            snooze_info = self.coordinator.get_snooze_info()
             attributes["snooze_count"] = snooze_info["count"]
             attributes["max_snoozes"] = snooze_info["max"]
             if snooze_info["until"]:
@@ -191,31 +174,31 @@ class AlarmStatusSensor(SensorEntity):
         return attributes
 
 
-class TimeUntilAlarmSensor(SensorEntity):
+class TimeUntilAlarmSensor(CoordinatorEntity, SensorEntity):
     """Sensor that shows time until next alarm."""
 
-    def __init__(self, alarm_entity: AlarmClockEntity, config_entry: ConfigEntry):
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
         """Initialize the sensor."""
-        self._alarm_entity = alarm_entity
+        super().__init__(coordinator)
         self._config_entry = config_entry
         self._update_timer = None
 
     @property
     def name(self) -> str:
         """Return the name of the sensor."""
-        return f"{self._alarm_entity.name} Time Until Alarm"
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Time Until Alarm"
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID."""
-        return f"{self._alarm_entity.unique_id}_{ENTITY_ID_TIME_UNTIL_ALARM}"
+        return f"{self.coordinator.unique_id}_{ENTITY_ID_TIME_UNTIL_ALARM}"
 
     @property
     def native_value(self) -> Optional[float]:
         """Return the state of the sensor in minutes."""
         # If alarm is snoozed, show countdown to snooze end
-        if self._alarm_entity.state == ALARM_STATE_SNOOZED:
-            snooze_info = self._alarm_entity.get_snooze_info()
+        if self.coordinator.get_state() == ALARM_STATE_SNOOZED:
+            snooze_info = self.coordinator.get_snooze_info()
             snooze_until = snooze_info.get("until")
             if snooze_until:
                 now = dt_util.now()
@@ -224,7 +207,7 @@ class TimeUntilAlarmSensor(SensorEntity):
                     return delta.total_seconds() / 60  # Return minutes until snooze ends
         
         # Otherwise show countdown to next alarm
-        next_alarm = self._alarm_entity.get_next_alarm()
+        next_alarm = self.coordinator.get_next_alarm()
         if next_alarm:
             now = dt_util.now()
             if next_alarm > now:
@@ -250,13 +233,7 @@ class TimeUntilAlarmSensor(SensorEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
-            "name": self._alarm_entity.name,
-            "manufacturer": "Alarm Clock Integration",
-            "model": "Alarm Clock",
-            "sw_version": "1.0.0",
-        }
+        return self.coordinator.device_info
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
@@ -266,8 +243,8 @@ class TimeUntilAlarmSensor(SensorEntity):
         countdown_type = "alarm"
         
         # If alarm is snoozed, show countdown to snooze end
-        if self._alarm_entity.state == ALARM_STATE_SNOOZED:
-            snooze_info = self._alarm_entity.get_snooze_info()
+        if self.coordinator.get_state() == ALARM_STATE_SNOOZED:
+            snooze_info = self.coordinator.get_snooze_info()
             snooze_until = snooze_info.get("until")
             if snooze_until and snooze_until > now:
                 target_time = snooze_until
@@ -275,7 +252,7 @@ class TimeUntilAlarmSensor(SensorEntity):
         
         # Otherwise show countdown to next alarm
         if not target_time:
-            next_alarm = self._alarm_entity.get_next_alarm()
+            next_alarm = self.coordinator.get_next_alarm()
             if next_alarm and next_alarm > now:
                 target_time = next_alarm
                 countdown_type = "alarm"
@@ -300,7 +277,7 @@ class TimeUntilAlarmSensor(SensorEntity):
     def available(self) -> bool:
         """Return if entity is available."""
         # Only available when there's a next alarm
-        return self._alarm_entity.get_next_alarm() is not None
+        return self.coordinator.get_next_alarm() is not None
 
     async def async_added_to_hass(self):
         """Run when entity about to be added to hass."""
