@@ -2,8 +2,6 @@
   "name": "Alarm Clock",
   "content_in_root": false,
   "domains": ["alarm_clock"],
-  "javascript": [
-    "www/alarm-clock-card/alarm-clock-card.js"
-  ],
+  "filename": "alarm-clock-card.js",
   "render_readme": true
 }
