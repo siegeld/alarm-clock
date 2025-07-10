@@ -750,18 +750,23 @@ export class AlarmClockCard extends LitElement implements LovelaceCard {
       }
 
       .days-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
+        display: flex;
+        justify-content: space-between;
+        gap: 2px;
         margin: 20px 0;
+        overflow: hidden;
       }
 
       .day-button {
         --mdc-theme-primary: var(--secondary-background-color);
         --mdc-theme-on-primary: var(--secondary-text-color);
         min-width: unset;
+        flex: 1;
+        max-width: calc((100% - 12px) / 7);
         height: 32px;
-        font-size: 12px;
+        font-size: 10px;
+        padding: 0 2px;
+        box-sizing: border-box;
       }
 
       .day-button.active {
