@@ -1,6 +1,6 @@
 {
   "name": "alarm-clock-card",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "A Lovelace card for Home Assistant alarm clock integration",
   "main": "dist/alarm-clock-card.js",
   "scripts": {

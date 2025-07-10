@@ -900,11 +900,11 @@ window.customCards.push({
   name: 'Alarm Clock Card',
   description: 'A card for displaying and controlling alarm clock entities',
   preview: true,
-  documentationURL: 'https://github.com/your-username/alarm-clock',
+  documentationURL: 'https://github.com/siegeld/alarm-clock',
 });
 
 console.info(
-  `%c  ALARM-CLOCK-CARD  %c  Version 1.3.5  `,
+  `%c  ALARM-CLOCK-CARD  %c  Version 1.3.6  `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray'
 );
