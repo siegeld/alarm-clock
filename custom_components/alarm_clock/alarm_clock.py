@@ -522,15 +522,19 @@ class AlarmClockEntity(SensorEntity):
                 }
             )
             
-            # Post-alarm is now independent - no need to schedule here
-            
-            self._state = ALARM_STATE_OFF
+            # Reset current alarm state
             self._cancel_all_timers()
             self._reset_execution_flags()
             self._snooze_count = 0
             self._snooze_until = None
             _LOGGER.info("Alarm dismissed manually")
+            
+            # Recalculate next alarm occurrence (for recurring alarms)
+            await self._async_update_alarm_state()
             self.async_write_ha_state()
+            
+            # Update sensors to show new next alarm
+            await self._async_update_related_entities()
 
     async def _async_auto_dismiss(self, now):
         """Auto-dismiss the alarm after timeout."""
@@ -546,7 +550,6 @@ class AlarmClockEntity(SensorEntity):
                 }
             )
             
-            self._state = ALARM_STATE_OFF
             # Cancel only snooze and auto-dismiss timers, keep post-alarm if running
             if self._snooze_timer:
                 self._snooze_timer()
@@ -560,7 +563,13 @@ class AlarmClockEntity(SensorEntity):
             self._snooze_until = None
             _LOGGER.info("Alarm auto-dismissed after %d minutes", 
                         self.config.get(CONF_AUTO_DISMISS_MINUTES, 30))
+            
+            # Recalculate next alarm occurrence (for recurring alarms)
+            await self._async_update_alarm_state()
             self.async_write_ha_state()
+            
+            # Update sensors to show new next alarm
+            await self._async_update_related_entities()
 
     async def _save_state(self):
         """Save the current state to config entry."""
