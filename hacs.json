@@ -1,14 +1,8 @@
 {
   "name": "Alarm Clock",
-  "hacs": "1.6.0",
-  "domains": ["alarm_clock"],
-  "iot_class": "Calculated",
-  "homeassistant": "2023.1.0",
-  "hide_default_branch": true,
-  "render_readme": true,
-  "country": ["US", "CA", "GB", "AU", "NZ", "DE", "FR", "ES", "IT", "NL", "BE", "SE", "DK", "NO", "FI"],
   "content_in_root": false,
-  "javascript": [
-    "ui/dist/alarm-clock-card.js"
-  ]
+  "domains": ["alarm_clock"],
+  "filename": "ui/dist/alarm-clock-card.js",
+  "zip_release": false,
+  "render_readme": true
 }
