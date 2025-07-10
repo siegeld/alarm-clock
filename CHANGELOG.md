@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2025-07-09
+
+### 🛠️ Bug Fixes
+
+#### UI/Layout Improvements
+- **Fixed Day Button Layout** - Resolved Sunday button getting cut off on narrow cards
+- **Responsive Design** - Switched from CSS grid to flexbox for better space distribution
+- **Optimized Spacing** - Reduced gaps and font sizes for better fit on all card widths
+
+#### Sensor Synchronization
+- **Fixed Sensor Updates** - Next alarm and time until sensors now update immediately when alarm time or days change
+- **Real-time Recalculation** - Sensors properly recalculate values without requiring page refresh
+- **Direct Entity References** - Improved sensor update mechanism using stored entity references
+
+### ✨ Technical Improvements
+
+#### Layout System
+- **Flexbox Implementation** - Changed day buttons from `grid` to `flex` with `justify-content: space-between`
+- **Calculated Sizing** - Added `max-width: calc((100% - 12px) / 7)` for precise button sizing
+- **Responsive Spacing** - Reduced gap from 8px → 2px and font-size from 12px → 10px
+
+#### Entity Management
+- **Sensor Registration** - Sensors now register themselves with main entity during setup
+- **Force Updates** - Added direct `async_write_ha_state()` calls for immediate sensor updates
+- **Better Synchronization** - Improved communication between main entity and sensor entities
+
+### 🎯 What's Fixed
+
+- ✅ All 7 day buttons now fit properly on narrow cards without Sunday cutoff
+- ✅ Next alarm sensor updates immediately when time or days change
+- ✅ Time until sensor recalculates countdown in real-time
+- ✅ No page refresh required for sensor updates
+- ✅ Improved responsive layout across all card sizes
+
+### 📝 Migration Notes
+
+- Hard refresh your browser (Ctrl+F5) after updating to see the layout fixes
+- No configuration changes required
+- All existing alarm settings preserved
+
+---
+
 ## [1.1.0] - 2025-07-09
 
 ### 🛠️ Bug Fixes & Improvements

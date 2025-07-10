@@ -864,7 +864,7 @@ window.customCards.push({
 });
 
 console.info(
-  `%c  ALARM-CLOCK-CARD  %c  Version 1.1.0  `,
+  `%c  ALARM-CLOCK-CARD  %c  Version 1.1.1  `,
   'color: orange; font-weight: bold; background: black',
   'color: white; font-weight: bold; background: dimgray'
 );
