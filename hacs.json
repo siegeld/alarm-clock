@@ -8,5 +8,10 @@
   "filename": "alarm-clock.zip",
   "hide_default_branch": true,
   "render_readme": true,
-  "country": ["US", "CA", "GB", "AU", "NZ", "DE", "FR", "ES", "IT", "NL", "BE", "SE", "DK", "NO", "FI"]
+  "country": ["US", "CA", "GB", "AU", "NZ", "DE", "FR", "ES", "IT", "NL", "BE", "SE", "DK", "NO", "FI"],
+  "content_in_root": false,
+  "persistent_directory": "ui/dist",
+  "javascript": [
+    "ui/dist/alarm-clock-card.js"
+  ]
 }
