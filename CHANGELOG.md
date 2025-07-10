@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2025-07-09
+
+### 🚨 Critical Bug Fix
+
+#### Dismiss Button Functionality  
+- **Fixed Dismiss Button Not Working** - Restore immediate alarm dismissal functionality
+- **Proper State Flow** - Dismiss now immediately sets state to OFF, then calculates next alarm
+- **Auto-dismiss Fix** - Applied same fix to auto-dismiss timer functionality
+
+### 🎯 What's Fixed
+
+**The Problem:**
+- Dismiss button stopped working after v1.1.2 recurring alarm fix
+- Clicking dismiss did nothing - alarm kept ringing
+- Auto-dismiss also broken
+
+**Root Cause:**
+- Removed immediate state change to `ALARM_STATE_OFF` in dismiss methods
+- Relied entirely on `_async_update_alarm_state()` to set new state
+- This broke immediate dismiss functionality
+
+**The Solution:**
+- Restored immediate `self._state = ALARM_STATE_OFF` 
+- Write state to HA immediately so user sees alarm dismissed
+- Then recalculate next alarm occurrence for recurring functionality
+- Update sensors with new next alarm time
+
+### 🔧 Technical Details
+
+**Correct Dismiss Flow:**
+1. **Immediately set state to OFF** (stops current alarm)  
+2. **Write state to HA immediately** (user sees alarm dismissed)
+3. **Then recalculate next alarm occurrence** (for recurring)
+4. **Update sensors** with new next alarm
+
+Applied to both `async_dismiss()` and `_async_auto_dismiss()` methods.
+
+### 📝 Impact
+
+This fixes the critical regression where dismiss functionality was completely broken. Now dismiss works immediately AND alarms still recur properly.
+
+---
+
 ## [1.1.2] - 2025-07-09
 
 ### 🚨 Critical Bug Fix
