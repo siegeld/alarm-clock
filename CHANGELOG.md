@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2025-07-09
+
+### 🚨 Critical Bug Fix
+
+#### Recurring Alarm Functionality
+- **Fixed Critical Recurring Alarm Bug** - Alarms now properly advance to next occurrence after dismiss/auto-dismiss
+- **Immediate State Recalculation** - `async_dismiss()` and `_async_auto_dismiss()` now call `_async_update_alarm_state()`
+- **Sensor Synchronization** - Both dismiss methods trigger `_async_update_related_entities()` for real-time updates
+
+### 🎯 What's Fixed
+
+**Before (Broken):**
+- Alarm rings Monday 7:00 AM → User dismisses → Alarm stays OFF permanently
+- Next alarm sensor shows "None" 
+- Alarm never rings again until manually re-enabled
+
+**After (Fixed):**
+- Alarm rings Monday 7:00 AM → User dismisses → Immediately arms for Tuesday 7:00 AM
+- Next alarm sensor immediately shows "Tuesday at 7:00 AM"
+- Alarm properly recurs as expected
+
+### 📝 Impact
+
+This was a **critical functionality bug** that made alarms behave as one-time instead of recurring. All users should update immediately to restore proper recurring alarm behavior.
+
+### 🔧 Technical Details
+
+- Added `await self._async_update_alarm_state()` to both dismiss methods
+- Added `await self._async_update_related_entities()` for sensor updates
+- Ensures alarm state machine properly advances to next scheduled occurrence
+- Maintains all timing and script execution logic
+
+---
+
 ## [1.1.1] - 2025-07-09
 
 ### 🛠️ Bug Fixes
