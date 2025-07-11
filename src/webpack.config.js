@@ -4,8 +4,8 @@ module.exports = {
   entry: './index.ts',
   mode: 'production',
   output: {
-    filename: 'alarm-clock-card.js',
-    path: path.resolve(__dirname, '../www'),
+    filename: 'alarm-clock.js',
+    path: path.resolve(__dirname, '../dist'),
     clean: true,
   },
   module: {
