@@ -2,7 +2,7 @@
     "name": "Alarm Clock",
     "content_in_root": false,
     "domains": ["alarm_clock"],
-    "render_readme": true
+    "render_readme": true,
     "resources": [
 	{
 	    "file": "dist/alarm-clock.js",
