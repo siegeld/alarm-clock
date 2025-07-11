@@ -1,6 +1,6 @@
 # 🕐 Alarm Clock Integration for Home Assistant
 
-A comprehensive alarm clock integration for Home Assistant that provides both a powerful **custom integration** and a beautiful **Lovelace card** in a single HACS installation.
+A comprehensive alarm clock integration for Home Assistant that provides powerful alarm clock functionality with entities, services, and automations.
 
 [![hacs][hacsbadge]][hacs]
 [![GitHub Release][releases-shield]][releases]
@@ -8,10 +8,10 @@ A comprehensive alarm clock integration for Home Assistant that provides both a 
 
 ## 🌟 What You Get
 
-This single HACS installation provides **two components**:
+This integration provides:
 
-1. **🔧 Custom Integration** - Complete alarm clock functionality with entities, services, and automations
-2. **🎨 Lovelace Card** - Beautiful, interactive UI card for easy control and monitoring
+- **🔧 Custom Integration** - Complete alarm clock functionality with entities, services, and automations
+- **🎨 Companion Card** - Works with the separate [Alarm Clock Card](https://github.com/siegeld/alarm-clock-card) for beautiful UI
 
 ## ✨ Features
 
