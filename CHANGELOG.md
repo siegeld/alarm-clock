@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2025-07-12
+
+### 🐛 Bug Fix
+
+#### Voice Control Error Handling
+- **Fixed Voice Command Error Messages** - Voice commands now work without returning "operation failed" errors
+- **Added Exception Handling** - Comprehensive try-catch blocks in all intent handlers prevent uncaught exceptions
+- **Improved Error Responses** - Better error messages when voice commands genuinely fail
+- **Enhanced Logging** - Added detailed error logging for voice command troubleshooting
+
+### 🔧 Technical Changes
+
+#### Intent Handler Improvements
+- **SetAlarmIntent** - Added error handling for time parsing and coordinator operations
+- **EnableAlarmIntent** - Protected alarm enabling operations with exception handling
+- **DisableAlarmIntent** - Safe error handling for alarm disabling operations
+- **SnoozeAlarmIntent** - Exception protection for snooze operations
+- **DismissAlarmIntent** - Error handling for dismiss actions
+- **AlarmStatusIntent** - Protected status query operations
+- **EnableDayIntent** - Safe day management operations
+- **DisableDayIntent** - Protected day disable operations
+
+### 🎯 What's Fixed
+
+- ✅ **Voice commands work without error messages** - "Set alarm for 7:30 AM" → "Alarm set for 7:30 am"
+- ✅ **Proper success confirmations** - Voice assistant provides correct feedback
+- ✅ **Better error handling** - Genuine errors now provide helpful messages
+- ✅ **Enhanced reliability** - Voice control system more robust and stable
+
+### 📝 Migration Notes
+
+- No configuration changes required
+- Voice control functionality improved automatically
+- All existing voice commands continue to work
+- Error messages now accurate and helpful
+
+---
+
 ## [2.1.0] - 2025-07-12
 
 ### 🎤 Major New Feature: Voice Control

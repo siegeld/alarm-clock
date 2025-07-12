@@ -1,7 +1,7 @@
 {
   "domain": "alarm_clock",
   "name": "Alarm Clock",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "documentation": "https://github.com/siegeld/alarm-clock",
   "issue_tracker": "https://github.com/siegeld/alarm-clock/issues",
   "dependencies": ["conversation"],
