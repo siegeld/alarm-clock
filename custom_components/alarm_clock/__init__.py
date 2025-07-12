@@ -18,6 +18,7 @@ from .const import (
     SERVICE_TOGGLE_DAY,
 )
 from .coordinator import AlarmClockCoordinator
+from .intent_script import async_setup_intents
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         name=entry.data.get("name", "Alarm Clock"),
         manufacturer="Alarm Clock Integration",
         model="Alarm Clock",
-        sw_version="1.2.0",
+        sw_version="2.1.0",
     )
     
     # Create the coordinator
@@ -85,6 +86,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     # Register services
     await _async_register_services(hass)
+    
+    # Register voice intents
+    await async_setup_intents(hass)
     
     _LOGGER.error("ALARM CLOCK INTEGRATION: Setup complete")
     

@@ -5,6 +5,108 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-07-12
+
+### 🎤 Major New Feature: Voice Control
+
+#### Home Assistant Voice Preview Integration
+- **Complete Voice Control** - Full voice control integration using Home Assistant Voice Preview
+- **Natural Language Processing** - Supports various time formats and natural language commands
+- **Room-Specific Targeting** - Voice commands automatically target the alarm clock in the current room
+- **Comprehensive Command Set** - All alarm functions accessible via voice commands
+
+#### Voice Commands Supported
+- **Setting Alarms** - "Set alarm for 7:30 AM", "Wake me up at six thirty", "Set bedroom alarm for 8:00 AM"
+- **Enabling/Disabling** - "Turn on alarm", "Turn off my alarm", "Enable alarm for weekdays"
+- **Active Control** - "Snooze", "Stop alarm", "Dismiss alarm"
+- **Status Queries** - "What time is my alarm?", "Is my alarm on?", "When is my alarm?"
+- **Day Management** - "Turn on alarm for Monday", "Enable alarm for weekdays", "Turn off alarm for Saturday"
+
+#### Advanced Voice Features
+- **Time Format Recognition** - Supports "7:30 AM", "seven thirty", "6:00 in the morning", "8:00 at night"
+- **Room Context Awareness** - Commands in bedroom target bedroom alarm, kitchen commands target kitchen alarm
+- **Confirmation Responses** - Voice assistant confirms actions: "Alarm set for 7:30 am", "Alarm snoozed for 9 minutes"
+- **Fallback Logic** - If no room-specific alarm found, uses first available alarm clock
+
+#### Technical Implementation
+- **Intent Handler System** - Custom intent handlers for each voice command type
+- **Area/Room Detection** - Automatic detection of voice command origin room
+- **Natural Language Parser** - Robust time parsing supporting multiple formats
+- **Conversation Integration** - Native integration with Home Assistant's conversation system
+
+### 🔧 Technical Changes
+
+#### New Dependencies
+- **Conversation Integration** - Added conversation dependency to manifest.json
+- **Intent Registration** - Voice intents automatically registered during integration setup
+- **Room-Based Entity Discovery** - Enhanced entity discovery by area/room assignment
+
+#### New Files
+- **`intent_script.py`** - Voice intent handlers and room-specific targeting logic
+- **`intents.yaml`** - Voice command patterns and sentence definitions
+- **`VOICE_CONTROL.md`** - Comprehensive voice control documentation
+
+### 📝 Documentation Updates
+
+#### New Documentation
+- **Voice Control Guide** - Complete guide to voice commands and setup
+- **Room-Specific Setup** - Instructions for multi-room voice control
+- **Troubleshooting** - Voice command troubleshooting and debugging
+
+#### Updated Documentation
+- **README.md** - Added voice control section and feature highlights
+- **Features List** - Updated to include voice control as major feature
+
+### 🎯 What's New
+
+- ✅ **Complete Voice Control** - Set, enable, disable, snooze, dismiss, and query alarms by voice
+- ✅ **Room-Specific Commands** - Voice commands automatically target the right alarm clock
+- ✅ **Natural Language Support** - Understands various ways to express times and commands
+- ✅ **Zero Configuration** - Voice control works automatically once integration is set up
+- ✅ **Comprehensive Commands** - Every alarm function accessible via voice
+- ✅ **Smart Responses** - Voice assistant provides helpful confirmations and feedback
+
+### 🚀 Usage Examples
+
+#### Basic Voice Control
+```
+"Set alarm for 7:30 AM" → "Alarm set for 7:30 am"
+"Turn on alarm" → "Alarm enabled for 7:30 am"
+"What time is my alarm?" → "Your alarm is set for 7:30 am and is currently enabled"
+```
+
+#### Room-Specific Control
+```
+In bedroom: "Set alarm for 7:30 AM" → Sets bedroom alarm
+In kitchen: "Turn on alarm" → Enables kitchen alarm
+In living room: "Snooze" → Snoozes living room alarm
+```
+
+#### Day Management
+```
+"Enable alarm for weekdays" → "Alarm enabled for weekdays"
+"Turn off alarm for Saturday" → "Alarm disabled for Saturday"
+```
+
+### 📋 Requirements
+
+- **Home Assistant Voice Preview** - Voice control requires HA Voice Preview enabled
+- **Area Assignment** - Alarm clock devices should be assigned to correct areas/rooms
+- **Voice Assistant** - Compatible voice assistant device or Home Assistant's built-in assistant
+
+### 🔧 Breaking Changes
+
+None - this is a backwards-compatible feature addition.
+
+### 📝 Migration Notes
+
+- No configuration changes required
+- Voice control works automatically once integration is updated
+- Assign alarm clock devices to correct areas/rooms for best room-specific targeting
+- All existing alarm settings and functionality preserved
+
+---
+
 ## [1.3.0] - 2025-07-10
 
 ### 🚀 Major Architecture Refactoring

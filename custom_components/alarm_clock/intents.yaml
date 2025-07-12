@@ -1,0 +1,206 @@
+language: "en"
+intents:
+  AlarmSetTime:
+    data:
+      - sentences:
+          - "set alarm for {time}"
+          - "set my alarm for {time}"
+          - "set the alarm for {time}"
+          - "wake me up at {time}"
+          - "I need to wake up at {time}"
+          - "set alarm to {time}"
+          - "alarm for {time}"
+          - "set {name} alarm for {time}"
+          - "set {name} for {time}"
+    slots:
+      time:
+        values:
+          - "7:30"
+          - "7:30 AM"
+          - "7:30 PM"
+          - "seven thirty"
+          - "seven thirty AM"
+          - "seven thirty PM"
+          - "6:00"
+          - "6:00 AM"
+          - "6:00 PM"
+          - "six AM"
+          - "six PM"
+          - "8:15"
+          - "8:15 AM"
+          - "8:15 PM"
+          - "eight fifteen"
+          - "eight fifteen AM"
+          - "eight fifteen PM"
+      name:
+        values:
+          - "bedroom"
+          - "living room"
+          - "kitchen"
+          - "office"
+          - "main"
+
+  AlarmEnable:
+    data:
+      - sentences:
+          - "turn on alarm"
+          - "turn on my alarm"
+          - "turn on the alarm"
+          - "enable alarm"
+          - "enable my alarm"
+          - "enable the alarm"
+          - "alarm on"
+          - "turn on {name} alarm"
+          - "enable {name} alarm"
+    slots:
+      name:
+        values:
+          - "bedroom"
+          - "living room"
+          - "kitchen"
+          - "office"
+          - "main"
+
+  AlarmDisable:
+    data:
+      - sentences:
+          - "turn off alarm"
+          - "turn off my alarm"
+          - "turn off the alarm"
+          - "disable alarm"
+          - "disable my alarm"
+          - "disable the alarm"
+          - "alarm off"
+          - "turn off {name} alarm"
+          - "disable {name} alarm"
+    slots:
+      name:
+        values:
+          - "bedroom"
+          - "living room"
+          - "kitchen"
+          - "office"
+          - "main"
+
+  AlarmSnooze:
+    data:
+      - sentences:
+          - "snooze"
+          - "snooze alarm"
+          - "snooze my alarm"
+          - "snooze the alarm"
+          - "snooze {name} alarm"
+    slots:
+      name:
+        values:
+          - "bedroom"
+          - "living room"
+          - "kitchen"
+          - "office"
+          - "main"
+
+  AlarmDismiss:
+    data:
+      - sentences:
+          - "dismiss"
+          - "dismiss alarm"
+          - "dismiss my alarm"
+          - "dismiss the alarm"
+          - "stop alarm"
+          - "stop my alarm"
+          - "stop the alarm"
+          - "turn off alarm"
+          - "dismiss {name} alarm"
+          - "stop {name} alarm"
+    slots:
+      name:
+        values:
+          - "bedroom"
+          - "living room"
+          - "kitchen"
+          - "office"
+          - "main"
+
+  AlarmStatus:
+    data:
+      - sentences:
+          - "what time is my alarm"
+          - "what time is the alarm"
+          - "when is my alarm"
+          - "when is the alarm"
+          - "alarm time"
+          - "my alarm time"
+          - "what time is my alarm set for"
+          - "what time is the alarm set for"
+          - "is my alarm on"
+          - "is the alarm on"
+          - "alarm status"
+          - "what time is {name} alarm"
+          - "when is {name} alarm"
+          - "is {name} alarm on"
+    slots:
+      name:
+        values:
+          - "bedroom"
+          - "living room"
+          - "kitchen"
+          - "office"
+          - "main"
+
+  AlarmEnableDay:
+    data:
+      - sentences:
+          - "turn on alarm for {day}"
+          - "enable alarm for {day}"
+          - "set alarm for {day}"
+          - "alarm on for {day}"
+          - "turn on {name} alarm for {day}"
+          - "enable {name} alarm for {day}"
+          - "set {name} alarm for {day}"
+    slots:
+      day:
+        values:
+          - "monday"
+          - "tuesday"
+          - "wednesday"
+          - "thursday"
+          - "friday"
+          - "saturday"
+          - "sunday"
+          - "weekdays"
+          - "weekends"
+      name:
+        values:
+          - "bedroom"
+          - "living room"
+          - "kitchen"
+          - "office"
+          - "main"
+
+  AlarmDisableDay:
+    data:
+      - sentences:
+          - "turn off alarm for {day}"
+          - "disable alarm for {day}"
+          - "alarm off for {day}"
+          - "turn off {name} alarm for {day}"
+          - "disable {name} alarm for {day}"
+    slots:
+      day:
+        values:
+          - "monday"
+          - "tuesday"
+          - "wednesday"
+          - "thursday"
+          - "friday"
+          - "saturday"
+          - "sunday"
+          - "weekdays"
+          - "weekends"
+      name:
+        values:
+          - "bedroom"
+          - "living room"
+          - "kitchen"
+          - "office"
+          - "main"

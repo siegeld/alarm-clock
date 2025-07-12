@@ -5,6 +5,7 @@ A comprehensive alarm clock integration for Home Assistant with advanced schedul
 ## Key Features
 
 - **Complete Alarm System**: Full-featured alarm clock with time setting, enable/disable, and day-of-week scheduling
+- **Voice Control**: Complete voice control using Home Assistant Voice Preview with room-specific targeting
 - **Three-Stage Script Execution**: 
   - Pre-alarm scripts (gradual wake-up)
   - Alarm trigger scripts (sound/music)
@@ -44,3 +45,5 @@ Each alarm clock creates multiple entities:
 - **Morning Routine**: Alarm triggers coffee maker and plays morning playlist
 - **Smart Shutoff**: Post-alarm turns off music after 30 minutes if not dismissed
 - **Weekend Sleep-in**: Different schedules for weekdays vs weekends
+- **Voice Control**: "Set alarm for 7:30 AM", "Turn on alarm", "Snooze", "What time is my alarm?"
+- **Room-Specific Voice**: Commands automatically target the alarm clock in the current room

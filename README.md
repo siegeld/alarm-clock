@@ -17,6 +17,7 @@ This integration provides:
 
 ### Integration Features
 - **🗓️ Flexible Scheduling** - Set different alarm times and enable/disable for specific days of the week
+- **🎤 Voice Control** - Complete voice control using Home Assistant Voice Preview with room-specific targeting
 - **🎬 Script Integration** - Execute Home Assistant scripts at three different stages:
   - **Pre-alarm**: Run scripts before the alarm (e.g., gradually turn on lights)
   - **Alarm trigger**: Run scripts when the alarm goes off (e.g., play music, announcements)
@@ -109,6 +110,38 @@ For each alarm clock instance, the following entities are created:
 ### Number Entities
 - **`number.{name}_snooze_duration`** - Adjust snooze duration (1-30 minutes)
 - **`number.{name}_max_snoozes`** - Adjust maximum snooze count (0-10)
+
+## 🎤 Voice Control
+
+The integration supports comprehensive voice control through Home Assistant Voice Preview. Commands automatically target the alarm clock in the room where the voice command is issued.
+
+### Voice Commands
+
+#### Setting Alarms
+- **"Set alarm for 7:30 AM"** - Sets alarm time
+- **"Wake me up at six thirty"** - Natural language time setting
+- **"Set bedroom alarm for 8:00 AM"** - Room-specific targeting
+
+#### Enabling/Disabling
+- **"Turn on alarm"** - Enable alarm
+- **"Turn off my alarm"** - Disable alarm
+- **"Enable alarm for weekdays"** - Day-specific control
+
+#### During Alarms
+- **"Snooze"** - Snooze active alarm
+- **"Stop alarm"** - Dismiss active alarm
+
+#### Status Queries
+- **"What time is my alarm?"** - Check alarm time
+- **"Is my alarm on?"** - Check alarm status
+
+### Room-Specific Control
+Voice commands automatically target the alarm clock in the room where spoken:
+- Bedroom: "Set alarm for 7:30 AM" → Sets bedroom alarm
+- Kitchen: "Turn on alarm" → Enables kitchen alarm
+- Living Room: "What time is my alarm?" → Queries living room alarm
+
+For complete voice control documentation, see [VOICE_CONTROL.md](VOICE_CONTROL.md).
 
 ## 🛠️ Services
 
