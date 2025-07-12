@@ -18,6 +18,7 @@ This integration provides:
 ### Integration Features
 - **🗓️ Flexible Scheduling** - Set different alarm times and enable/disable for specific days of the week
 - **🎤 Voice Control** - Complete voice control using Home Assistant Voice Preview with room-specific targeting
+- **🔊 Built-in Sound Support** - Direct media player integration with built-in alarm sounds and custom URL support
 - **🎬 Script Integration** - Execute Home Assistant scripts at three different stages:
   - **Pre-alarm**: Run scripts before the alarm (e.g., gradually turn on lights)
   - **Alarm trigger**: Run scripts when the alarm goes off (e.g., play music, announcements)
@@ -76,14 +77,25 @@ The integration uses a **GUI configuration flow** with three steps:
 - **Name**: Give your alarm clock a friendly name
 - **Default Alarm Time**: Set the initial alarm time (can be changed later)
 
-### Step 2: Script Configuration
+### Step 2: Media Player Configuration
+- **Media Player Entity**: Select a media player to play alarm sounds (optional)
+- **Alarm Sound**: Choose from built-in sounds or custom URL:
+  - **Classic Alarm Beep**: Traditional alarm clock sound
+  - **Gentle Chime**: Soft bell chime for gentle wake-up
+  - **Urgent Beep**: More intense beeping for heavy sleepers
+  - **Digital Alarm**: Modern digital alarm sound
+  - **Custom URL**: Use your own sound file URL
+- **Alarm Volume**: Volume level (0-100%, default: 50%)
+- **Repeat Sound**: Whether to keep playing until dismissed (default: enabled)
+
+### Step 3: Script Configuration
 - **Pre-alarm Script**: Optional script to run before the alarm
 - **Pre-alarm Minutes**: How many minutes before the alarm to run the pre-alarm script (1-60)
-- **Alarm Script**: **Required** script to run when the alarm triggers
+- **Alarm Script**: Optional script to run when the alarm triggers (can be used alongside media player)
 - **Post-alarm Script**: Optional script to run after the alarm to end it
 - **Post-alarm Minutes**: How many minutes after the alarm to run the post-alarm script (1-120)
 
-### Step 3: Advanced Settings
+### Step 4: Advanced Settings
 - **Snooze Duration**: How long each snooze lasts (1-30 minutes, default: 9)
 - **Maximum Snoozes**: Maximum number of times the alarm can be snoozed (0-10, default: 3)
 - **Auto-dismiss Minutes**: Automatically dismiss alarm after this time (5-120 minutes, default: 30)

@@ -7,6 +7,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers import selector
 
 from .const import (
     DOMAIN,
@@ -16,6 +17,15 @@ from .const import (
     DEFAULT_PRE_ALARM_MINUTES,
     DEFAULT_POST_ALARM_MINUTES,
     DAYS_OF_WEEK,
+    CONF_MEDIA_PLAYER_ENTITY,
+    CONF_ALARM_SOUND,
+    CONF_CUSTOM_SOUND_URL,
+    CONF_ALARM_VOLUME,
+    CONF_REPEAT_SOUND,
+    BUILTIN_ALARM_SOUNDS,
+    DEFAULT_ALARM_VOLUME,
+    DEFAULT_ALARM_SOUND,
+    DEFAULT_REPEAT_SOUND,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,9 +52,58 @@ class AlarmClockConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(user_input["name"])
         self._abort_if_unique_id_configured()
 
-        # Create the config entry with minimal data
+        # Store name for the next step
+        self.user_input = user_input
+        
+        # Move to media player configuration step
+        return await self.async_step_media_player()
+
+    async def async_step_media_player(self, user_input: Optional[Dict[str, Any]] = None) -> FlowResult:
+        """Handle media player configuration."""
+        errors = {}
+        
+        if user_input is None:
+            # Create schema for media player configuration
+            sound_options = [
+                {"value": key, "label": sound_info["name"]}
+                for key, sound_info in BUILTIN_ALARM_SOUNDS.items()
+            ]
+            
+            schema = vol.Schema({
+                vol.Optional(CONF_MEDIA_PLAYER_ENTITY): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="media_player")
+                ),
+                vol.Optional(CONF_ALARM_SOUND, default=DEFAULT_ALARM_SOUND): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=sound_options,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
+                vol.Optional(CONF_ALARM_VOLUME, default=DEFAULT_ALARM_VOLUME): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0,
+                        max=100,
+                        step=5,
+                        mode=selector.NumberSelectorMode.SLIDER,
+                    )
+                ),
+                vol.Optional(CONF_REPEAT_SOUND, default=DEFAULT_REPEAT_SOUND): bool,
+            })
+            
+            return self.async_show_form(
+                step_id="media_player",
+                data_schema=schema,
+                errors=errors,
+            )
+
+        # Handle custom sound URL
+        custom_sound_url = None
+        if user_input.get(CONF_ALARM_SOUND) == "custom":
+            return await self.async_step_custom_sound(user_input)
+        
+        # Create the config entry
         config_data = {
-            "name": user_input["name"],
+            "name": self.user_input["name"],
             "alarm_time": "07:00",  # Default alarm time
             # Set default values that can be changed via entities later
             "pre_alarm_enabled": False,
@@ -57,10 +116,56 @@ class AlarmClockConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             "snooze_duration": DEFAULT_SNOOZE_DURATION,
             "max_snoozes": DEFAULT_MAX_SNOOZES,
             "default_enabled_days": DAYS_OF_WEEK[:5],  # Weekdays by default
+            # Media player settings
+            CONF_MEDIA_PLAYER_ENTITY: user_input.get(CONF_MEDIA_PLAYER_ENTITY),
+            CONF_ALARM_SOUND: user_input.get(CONF_ALARM_SOUND, DEFAULT_ALARM_SOUND),
+            CONF_CUSTOM_SOUND_URL: custom_sound_url,
+            CONF_ALARM_VOLUME: user_input.get(CONF_ALARM_VOLUME, DEFAULT_ALARM_VOLUME),
+            CONF_REPEAT_SOUND: user_input.get(CONF_REPEAT_SOUND, DEFAULT_REPEAT_SOUND),
         }
         
         return self.async_create_entry(
-            title=user_input["name"],
+            title=self.user_input["name"],
+            data=config_data,
+        )
+
+    async def async_step_custom_sound(self, media_player_input: Dict[str, Any], user_input: Optional[Dict[str, Any]] = None) -> FlowResult:
+        """Handle custom sound URL configuration."""
+        if user_input is None:
+            schema = vol.Schema({
+                vol.Required(CONF_CUSTOM_SOUND_URL): str,
+            })
+            
+            return self.async_show_form(
+                step_id="custom_sound",
+                data_schema=schema,
+            )
+
+        # Create the config entry with custom sound URL
+        config_data = {
+            "name": self.user_input["name"],
+            "alarm_time": "07:00",  # Default alarm time
+            # Set default values that can be changed via entities later
+            "pre_alarm_enabled": False,
+            "pre_alarm_script": "",
+            "pre_alarm_minutes": DEFAULT_PRE_ALARM_MINUTES,
+            "alarm_script": "",
+            "post_alarm_enabled": False,
+            "post_alarm_script": "",
+            "post_alarm_minutes": DEFAULT_POST_ALARM_MINUTES,
+            "snooze_duration": DEFAULT_SNOOZE_DURATION,
+            "max_snoozes": DEFAULT_MAX_SNOOZES,
+            "default_enabled_days": DAYS_OF_WEEK[:5],  # Weekdays by default
+            # Media player settings
+            CONF_MEDIA_PLAYER_ENTITY: media_player_input.get(CONF_MEDIA_PLAYER_ENTITY),
+            CONF_ALARM_SOUND: media_player_input.get(CONF_ALARM_SOUND, DEFAULT_ALARM_SOUND),
+            CONF_CUSTOM_SOUND_URL: user_input.get(CONF_CUSTOM_SOUND_URL),
+            CONF_ALARM_VOLUME: media_player_input.get(CONF_ALARM_VOLUME, DEFAULT_ALARM_VOLUME),
+            CONF_REPEAT_SOUND: media_player_input.get(CONF_REPEAT_SOUND, DEFAULT_REPEAT_SOUND),
+        }
+        
+        return self.async_create_entry(
+            title=self.user_input["name"],
             data=config_data,
         )
 

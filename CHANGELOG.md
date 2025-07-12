@@ -5,6 +5,132 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-07-12
+
+### 🔊 Major New Feature: Built-in Sound Support
+
+#### Direct Media Player Integration
+- **Native Sound Playback** - Direct integration with Home Assistant media players for alarm sounds
+- **Built-in Sound Library** - Four built-in alarm sounds with web-based URLs:
+  - **Classic Alarm Beep** - Traditional alarm clock sound
+  - **Gentle Chime** - Soft bell chime for gentle wake-up
+  - **Urgent Beep** - More intense beeping for heavy sleepers
+  - **Digital Alarm** - Modern digital alarm sound
+- **Custom Sound Support** - Support for custom sound URLs alongside built-in options
+- **Volume Control** - Configurable alarm volume (0-100%) with automatic volume setting
+
+#### Enhanced Configuration Flow
+- **Multi-Step Setup** - Enhanced configuration flow with dedicated media player setup step
+- **Media Player Selection** - Choose from available media players during setup
+- **Sound Preview** - Built-in sound options with descriptions for easy selection
+- **Volume Slider** - Intuitive volume control during configuration
+- **Custom URL Input** - Conditional input field for custom sound URLs
+
+#### Smart Sound Management
+- **Automatic Playback** - Sounds play automatically when alarm triggers
+- **Proper Volume Setting** - Media player volume set before sound playback
+- **Sound Stopping** - Automatic sound stopping on snooze or dismiss
+- **Error Handling** - Graceful fallback when media player unavailable
+- **Event Logging** - Sound start/stop events logged for troubleshooting
+
+### 🔧 Technical Implementation
+
+#### Coordinator Enhancements
+- **Media Player Methods** - New `_async_play_alarm_sound()` and `_async_stop_alarm_sound()` methods
+- **Sound URL Resolution** - Intelligent URL resolution for built-in and custom sounds
+- **Volume Management** - Automatic volume level conversion and setting
+- **State Integration** - Sound playback integrated with existing alarm state machine
+
+#### Configuration System
+- **New Constants** - Added media player configuration constants and built-in sound definitions
+- **Enhanced Config Flow** - Multi-step configuration with media player and sound selection
+- **Backward Compatibility** - Existing script-based setups continue to work unchanged
+- **State Attributes** - Media player settings exposed in entity state attributes
+
+#### Dependency Updates
+- **Media Player Dependency** - Added `media_player` dependency to manifest.json
+- **Service Integration** - Native `media_player.play_media` and `media_player.volume_set` service calls
+- **Error Resilience** - Comprehensive error handling for media player operations
+
+### ✨ User Experience Improvements
+
+#### Configuration Ease
+- **Guided Setup** - Step-by-step configuration with clear options
+- **No Script Required** - Simple sound playback without needing to create scripts
+- **Multiple Options** - Choose from built-in sounds or provide custom URLs
+- **Preview Descriptions** - Clear descriptions of each built-in sound option
+
+#### Sound Quality
+- **Professional Sounds** - High-quality built-in alarm sounds
+- **Consistent Volume** - Reliable volume control across different media players
+- **Immediate Playback** - Sounds start playing immediately when alarm triggers
+- **Clean Stopping** - Sounds stop cleanly when alarm is dismissed or snoozed
+
+### 🎯 What's New
+
+- ✅ **Built-in Sound Library** - Four professional alarm sounds ready to use
+- ✅ **Media Player Integration** - Direct support for any Home Assistant media player
+- ✅ **Custom Sound URLs** - Support for your own sound files
+- ✅ **Volume Control** - Configurable volume with automatic setting
+- ✅ **Smart Sound Management** - Automatic play/stop with proper state handling
+- ✅ **Backward Compatible** - Existing script-based setups continue working
+- ✅ **Error Resilient** - Graceful handling of media player issues
+
+### 🚀 Usage Examples
+
+#### Basic Sound Setup
+```yaml
+# Configuration during setup
+Media Player: media_player.bedroom_speaker
+Alarm Sound: Classic Alarm Beep
+Volume: 50%
+```
+
+#### Custom Sound Setup
+```yaml
+# Configuration during setup
+Media Player: media_player.living_room_speaker
+Alarm Sound: Custom URL
+Custom Sound URL: https://example.com/my-alarm.mp3
+Volume: 75%
+```
+
+#### Sound + Script Combination
+```yaml
+# Can use both media player sounds AND scripts
+Media Player: media_player.bedroom_speaker  # Plays built-in sound
+Alarm Sound: Gentle Chime
+Alarm Script: script.morning_routine        # Also runs script
+```
+
+### 📋 Configuration Options
+
+#### Built-in Sound URLs
+- **Classic Alarm Beep**: `https://www.soundjay.com/misc/sounds/bell-ringing-05.wav`
+- **Gentle Chime**: `https://www.soundjay.com/misc/sounds/bell-ringing-01.wav`
+- **Urgent Beep**: `https://www.soundjay.com/misc/sounds/beep-07a.wav`
+- **Digital Alarm**: `https://www.soundjay.com/misc/sounds/beep-10.wav`
+
+#### New State Attributes
+- `media_player_entity` - Configured media player entity
+- `alarm_sound` - Selected alarm sound type
+- `custom_sound_url` - Custom sound URL (if applicable)
+- `alarm_volume` - Configured volume level
+- `sound_url` - Resolved sound URL for playback
+
+### 🔧 Breaking Changes
+
+None - this is a backwards-compatible feature addition.
+
+### 📝 Migration Notes
+
+- **Existing Setups** - All existing alarm clocks continue working unchanged
+- **Optional Feature** - Media player integration is optional during setup
+- **Script Compatibility** - Can use both media player sounds and scripts together
+- **No Restart Required** - Feature available immediately after update
+
+---
+
 ## [2.1.3] - 2025-07-12
 
 ### 🚨 Critical Bug Fix

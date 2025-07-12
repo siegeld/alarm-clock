@@ -27,6 +27,12 @@ from .const import (
     CONF_MAX_SNOOZES,
     CONF_AUTO_DISMISS_MINUTES,
     CONF_DEFAULT_ENABLED_DAYS,
+    CONF_MEDIA_PLAYER_ENTITY,
+    CONF_ALARM_SOUND,
+    CONF_CUSTOM_SOUND_URL,
+    CONF_ALARM_VOLUME,
+    CONF_REPEAT_SOUND,
+    BUILTIN_ALARM_SOUNDS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -118,7 +124,7 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             "name": self.config.get("name", "Alarm Clock"),
             "manufacturer": "Alarm Clock Integration",
             "model": "Alarm Clock",
-            "sw_version": "1.2.0",
+            "sw_version": "2.2.0",
         }
 
     async def _async_update_data(self):
@@ -315,6 +321,9 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
                 _LOGGER.info("Alarm script executed: %s", script_entity)
             except Exception as e:
                 _LOGGER.error("Error executing alarm script: %s", e)
+        
+        # Play alarm sound if media player is configured
+        await self._async_play_alarm_sound()
 
         # Schedule post-alarm timer (if enabled)
         if (self.config.get(CONF_POST_ALARM_ENABLED, False) and 
@@ -412,6 +421,9 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
         self._snooze_until = dt_util.now() + timedelta(minutes=snooze_duration)
         self._state = ALARM_STATE_SNOOZED
 
+        # Stop alarm sound
+        await self._async_stop_alarm_sound()
+
         # Fire event for logbook
         self.hass.bus.async_fire(
             "alarm_clock_snoozed",
@@ -447,6 +459,9 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
                 }
             )
             
+            # Stop alarm sound
+            await self._async_stop_alarm_sound()
+            
             # Stop current alarm
             self._state = ALARM_STATE_OFF
             self._cancel_all_timers()
@@ -471,6 +486,9 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
                     "snooze_count": self._snooze_count if self._snooze_count > 0 else None,
                 }
             )
+            
+            # Stop alarm sound
+            await self._async_stop_alarm_sound()
             
             # Stop current alarm
             self._state = ALARM_STATE_OFF
@@ -535,6 +553,106 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
         self._alarm_executed = False
         self._post_alarm_executed = False
 
+    async def _async_play_alarm_sound(self):
+        """Play alarm sound via media player."""
+        media_player_entity = self.config.get(CONF_MEDIA_PLAYER_ENTITY)
+        if not media_player_entity:
+            _LOGGER.debug("No media player configured for alarm sound")
+            return
+
+        # Get sound URL
+        sound_url = self._get_alarm_sound_url()
+        if not sound_url:
+            _LOGGER.warning("No alarm sound URL available")
+            return
+
+        try:
+            # Set volume first if specified
+            volume = self.config.get(CONF_ALARM_VOLUME)
+            if volume is not None:
+                volume_level = volume / 100.0  # Convert to 0-1 range
+                await self.hass.services.async_call(
+                    "media_player",
+                    "volume_set",
+                    {
+                        "entity_id": media_player_entity,
+                        "volume_level": volume_level,
+                    },
+                )
+                _LOGGER.debug("Set alarm volume to %d%% for %s", volume, media_player_entity)
+
+            # Play the sound
+            await self.hass.services.async_call(
+                "media_player",
+                "play_media",
+                {
+                    "entity_id": media_player_entity,
+                    "media_content_id": sound_url,
+                    "media_content_type": "audio/wav",
+                },
+            )
+            
+            _LOGGER.info("Playing alarm sound: %s on %s", sound_url, media_player_entity)
+            
+            # Fire event for logbook
+            self.hass.bus.async_fire(
+                "alarm_clock_sound_started",
+                {
+                    "device_id": self.device_id,
+                    "name": self.config.get("name", "Alarm Clock"),
+                    "media_player": media_player_entity,
+                    "sound_url": sound_url,
+                    "volume": volume,
+                }
+            )
+
+        except Exception as e:
+            _LOGGER.error("Error playing alarm sound on %s: %s", media_player_entity, e)
+
+    async def _async_stop_alarm_sound(self):
+        """Stop alarm sound via media player."""
+        media_player_entity = self.config.get(CONF_MEDIA_PLAYER_ENTITY)
+        if not media_player_entity:
+            return
+
+        try:
+            await self.hass.services.async_call(
+                "media_player",
+                "media_stop",
+                {"entity_id": media_player_entity},
+            )
+            _LOGGER.info("Stopped alarm sound on %s", media_player_entity)
+            
+            # Fire event for logbook
+            self.hass.bus.async_fire(
+                "alarm_clock_sound_stopped",
+                {
+                    "device_id": self.device_id,
+                    "name": self.config.get("name", "Alarm Clock"),
+                    "media_player": media_player_entity,
+                }
+            )
+
+        except Exception as e:
+            _LOGGER.error("Error stopping alarm sound on %s: %s", media_player_entity, e)
+
+    def _get_alarm_sound_url(self) -> Optional[str]:
+        """Get the alarm sound URL based on configuration."""
+        alarm_sound = self.config.get(CONF_ALARM_SOUND)
+        if not alarm_sound:
+            return None
+
+        # Check if it's a custom sound
+        if alarm_sound == "custom":
+            return self.config.get(CONF_CUSTOM_SOUND_URL)
+
+        # Check if it's a built-in sound
+        if alarm_sound in BUILTIN_ALARM_SOUNDS:
+            return BUILTIN_ALARM_SOUNDS[alarm_sound]["url"]
+
+        # Fallback to default sound
+        return BUILTIN_ALARM_SOUNDS.get("classic_beep", {}).get("url")
+
     # Accessor methods for entities
     def get_alarm_time(self) -> Optional[time]:
         """Get the current alarm time."""
@@ -584,4 +702,11 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             "snooze_duration": self.config.get(CONF_SNOOZE_DURATION, 9),
             "max_snoozes": self.config.get(CONF_MAX_SNOOZES, 3),
             "auto_dismiss_minutes": self.config.get(CONF_AUTO_DISMISS_MINUTES, 30),
+            # Media player configuration
+            "media_player_entity": self.config.get(CONF_MEDIA_PLAYER_ENTITY, ""),
+            "alarm_sound": self.config.get(CONF_ALARM_SOUND, ""),
+            "custom_sound_url": self.config.get(CONF_CUSTOM_SOUND_URL, ""),
+            "alarm_volume": self.config.get(CONF_ALARM_VOLUME, 50),
+            "repeat_sound": self.config.get(CONF_REPEAT_SOUND, True),
+            "sound_url": self._get_alarm_sound_url(),
         }

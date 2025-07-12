@@ -24,6 +24,13 @@ CONF_MAX_SNOOZES = "max_snoozes"
 CONF_AUTO_DISMISS_MINUTES = "auto_dismiss_minutes"
 CONF_DEFAULT_ENABLED_DAYS = "default_enabled_days"
 
+# Media player configuration keys
+CONF_MEDIA_PLAYER_ENTITY = "media_player_entity"
+CONF_ALARM_SOUND = "alarm_sound"
+CONF_CUSTOM_SOUND_URL = "custom_sound_url"
+CONF_ALARM_VOLUME = "alarm_volume"
+CONF_REPEAT_SOUND = "repeat_sound"
+
 # Alarm states
 ALARM_STATE_OFF = "off"
 ALARM_STATE_ARMED = "armed"
@@ -58,3 +65,37 @@ SERVICE_TOGGLE_DAY = "toggle_day"
 
 # Update intervals
 UPDATE_INTERVAL = timedelta(seconds=30)
+
+# Built-in alarm sounds
+BUILTIN_ALARM_SOUNDS = {
+    "classic_beep": {
+        "name": "Classic Alarm Beep",
+        "url": "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
+        "description": "Traditional alarm clock beep"
+    },
+    "gentle_chime": {
+        "name": "Gentle Chime",
+        "url": "https://www.soundjay.com/misc/sounds/bell-ringing-01.wav", 
+        "description": "Soft bell chime"
+    },
+    "urgent_beep": {
+        "name": "Urgent Beep",
+        "url": "https://www.soundjay.com/misc/sounds/beep-07a.wav",
+        "description": "More intense beeping"
+    },
+    "digital_alarm": {
+        "name": "Digital Alarm",
+        "url": "https://www.soundjay.com/misc/sounds/beep-10.wav",
+        "description": "Digital alarm sound"
+    },
+    "custom": {
+        "name": "Custom URL",
+        "url": None,
+        "description": "Use your own sound URL"
+    }
+}
+
+# Default values for media player settings
+DEFAULT_ALARM_VOLUME = 50
+DEFAULT_ALARM_SOUND = "classic_beep"
+DEFAULT_REPEAT_SOUND = True
