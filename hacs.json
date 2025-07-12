@@ -1,0 +1,11 @@
+{
+  "name": "Alarm Clock",
+  "content_in_root": false,
+  "filename": "alarm_clock",
+  "country": [],
+  "homeassistant": "0.118.0",
+  "persistent_directory": false,
+  "render_readme": true,
+  "zip_release": false,
+  "hide_default_branch": false
+}
