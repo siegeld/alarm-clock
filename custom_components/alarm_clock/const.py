@@ -30,6 +30,7 @@ CONF_ALARM_SOUND = "alarm_sound"
 CONF_CUSTOM_SOUND_URL = "custom_sound_url"
 CONF_ALARM_VOLUME = "alarm_volume"
 CONF_REPEAT_SOUND = "repeat_sound"
+CONF_REPEAT_INTERVAL = "repeat_interval"
 
 # Alarm states
 ALARM_STATE_OFF = "off"
@@ -117,3 +118,4 @@ BUILTIN_ALARM_SOUNDS = {
 DEFAULT_ALARM_VOLUME = 50
 DEFAULT_ALARM_SOUND = "classic_beep"
 DEFAULT_REPEAT_SOUND = True
+DEFAULT_REPEAT_INTERVAL = 2  # seconds

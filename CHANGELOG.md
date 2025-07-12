@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.2] - 2025-01-12
+
+### Added
+- **Configurable Repeat Interval**: New number entity to control how often alarm sound repeats
+- **Faster Default Repeat**: Changed default repeat interval from 10 seconds to 2 seconds
+- **Real-time Configuration**: Repeat interval can be changed via UI without restart
+- **Enhanced Configuration Flow**: Repeat interval setting added to setup wizard
+
+### Changed
+- **Improved Responsiveness**: Alarm sounds now repeat every 2 seconds by default instead of 10 seconds
+- **Dynamic Repeat Control**: Repeat interval is now configurable from 1-60 seconds via `number.{name}_repeat_interval` entity
+- **Better User Experience**: More responsive alarm repetition for heavy sleepers
+
+### Technical Details
+- Added `CONF_REPEAT_INTERVAL` configuration key with `DEFAULT_REPEAT_INTERVAL = 2`
+- New `RepeatIntervalNumber` entity in CONFIG category for device settings
+- Enhanced `async_set_repeat_interval()` coordinator method for real-time updates
+- Updated sound repetition logic to use configurable interval from configuration
+- Added repeat interval to configuration flow with 1-60 second range
+
+### What's New
+- ✅ **Configurable repeat timing**: Set any interval from 1-60 seconds
+- ✅ **Faster default response**: 2-second repeat instead of 10 seconds
+- ✅ **Real-time updates**: Changes take effect immediately without restart
+- ✅ **UI integration**: Available in Settings > Devices & Services > Alarm Clock > Configure
+- ✅ **Backward compatible**: Existing alarms automatically use new 2-second default
+
+---
+
 ## [2.4.1] - 2025-01-12
 
 ### Fixed

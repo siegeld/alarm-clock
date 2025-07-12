@@ -32,7 +32,9 @@ from .const import (
     CONF_CUSTOM_SOUND_URL,
     CONF_ALARM_VOLUME,
     CONF_REPEAT_SOUND,
+    CONF_REPEAT_INTERVAL,
     BUILTIN_ALARM_SOUNDS,
+    DEFAULT_REPEAT_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -124,7 +126,7 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             "name": self.config.get("name", "Alarm Clock"),
             "manufacturer": "Alarm Clock Integration",
             "model": "Alarm Clock",
-            "sw_version": "2.4.1",
+            "sw_version": "2.4.2",
         }
 
     async def _async_update_data(self):
@@ -428,6 +430,10 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
     async def async_set_repeat_sound(self, repeat: bool):
         """Set the repeat sound setting."""
         await self._update_config({CONF_REPEAT_SOUND: repeat})
+
+    async def async_set_repeat_interval(self, interval: int):
+        """Set the repeat interval setting."""
+        await self._update_config({CONF_REPEAT_INTERVAL: interval})
 
     async def async_test_sound(self):
         """Test the alarm sound on the configured media player."""
@@ -813,11 +819,14 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             self._sound_repetition_timer()
             self._sound_repetition_timer = None
 
-        # Set up repeating timer - repeat every 10 seconds while alarm is ringing
+        # Get repeat interval from configuration
+        repeat_interval = self.config.get(CONF_REPEAT_INTERVAL, DEFAULT_REPEAT_INTERVAL)
+        
+        # Set up repeating timer - repeat every configured interval while alarm is ringing
         async def repeat_sound(now):
             if self._state == ALARM_STATE_RINGING:
                 try:
-                    _LOGGER.debug("Repeating alarm sound on %s", media_player_entity)
+                    _LOGGER.debug("Repeating alarm sound on %s (interval: %ds)", media_player_entity, repeat_interval)
                     await self.hass.services.async_call(
                         "media_player",
                         "play_media",
@@ -830,7 +839,7 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
                     
                     # Schedule next repetition
                     if self._state == ALARM_STATE_RINGING:
-                        next_repeat = dt_util.now() + timedelta(seconds=10)
+                        next_repeat = dt_util.now() + timedelta(seconds=repeat_interval)
                         self._sound_repetition_timer = async_track_point_in_time(
                             self.hass, repeat_sound, next_repeat
                         )
@@ -839,7 +848,7 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
                     _LOGGER.error("Error repeating alarm sound: %s", e)
 
         # Schedule first repetition
-        next_repeat = dt_util.now() + timedelta(seconds=10)
+        next_repeat = dt_util.now() + timedelta(seconds=repeat_interval)
         self._sound_repetition_timer = async_track_point_in_time(
             self.hass, repeat_sound, next_repeat
         )

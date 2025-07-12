@@ -22,10 +22,12 @@ from .const import (
     CONF_CUSTOM_SOUND_URL,
     CONF_ALARM_VOLUME,
     CONF_REPEAT_SOUND,
+    CONF_REPEAT_INTERVAL,
     BUILTIN_ALARM_SOUNDS,
     DEFAULT_ALARM_VOLUME,
     DEFAULT_ALARM_SOUND,
     DEFAULT_REPEAT_SOUND,
+    DEFAULT_REPEAT_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -88,6 +90,15 @@ class AlarmClockConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     )
                 ),
                 vol.Optional(CONF_REPEAT_SOUND, default=DEFAULT_REPEAT_SOUND): bool,
+                vol.Optional(CONF_REPEAT_INTERVAL, default=DEFAULT_REPEAT_INTERVAL): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=1,
+                        max=60,
+                        step=1,
+                        mode=selector.NumberSelectorMode.BOX,
+                        unit_of_measurement="s",
+                    )
+                ),
             })
             
             return self.async_show_form(
@@ -122,6 +133,7 @@ class AlarmClockConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_CUSTOM_SOUND_URL: custom_sound_url,
             CONF_ALARM_VOLUME: user_input.get(CONF_ALARM_VOLUME, DEFAULT_ALARM_VOLUME),
             CONF_REPEAT_SOUND: user_input.get(CONF_REPEAT_SOUND, DEFAULT_REPEAT_SOUND),
+            CONF_REPEAT_INTERVAL: user_input.get(CONF_REPEAT_INTERVAL, DEFAULT_REPEAT_INTERVAL),
         }
         
         return self.async_create_entry(
@@ -162,6 +174,7 @@ class AlarmClockConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_CUSTOM_SOUND_URL: user_input.get(CONF_CUSTOM_SOUND_URL),
             CONF_ALARM_VOLUME: media_player_input.get(CONF_ALARM_VOLUME, DEFAULT_ALARM_VOLUME),
             CONF_REPEAT_SOUND: media_player_input.get(CONF_REPEAT_SOUND, DEFAULT_REPEAT_SOUND),
+            CONF_REPEAT_INTERVAL: media_player_input.get(CONF_REPEAT_INTERVAL, DEFAULT_REPEAT_INTERVAL),
         }
         
         return self.async_create_entry(

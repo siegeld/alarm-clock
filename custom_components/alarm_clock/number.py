@@ -17,6 +17,8 @@ from .const import (
     DEFAULT_AUTO_DISMISS_MINUTES,
     CONF_ALARM_VOLUME,
     DEFAULT_ALARM_VOLUME,
+    CONF_REPEAT_INTERVAL,
+    DEFAULT_REPEAT_INTERVAL,
 )
 from .coordinator import AlarmClockCoordinator
 
@@ -48,6 +50,7 @@ async def async_setup_entry(
         MaxSnoozesNumber(coordinator, config_entry),
         AutoDismissMinutesNumber(coordinator, config_entry),
         AlarmVolumeNumber(coordinator, config_entry),
+        RepeatIntervalNumber(coordinator, config_entry),
     ]
     
     async_add_entities(entities)
@@ -120,6 +123,70 @@ class PreAlarmMinutesNumber(CoordinatorEntity, NumberEntity):
         )
         # Update the coordinator config with fresh data
         self.coordinator.config = fresh_data
+
+
+class RepeatIntervalNumber(CoordinatorEntity, NumberEntity):
+    """Number entity for repeat interval setting."""
+
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
+        """Initialize the number entity."""
+        super().__init__(coordinator)
+        self._config_entry = config_entry
+
+    @property
+    def name(self) -> str:
+        """Return the name of the number entity."""
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Repeat Interval"
+
+    @property
+    def unique_id(self) -> str:
+        """Return the unique ID."""
+        return f"{self.coordinator.unique_id}_repeat_interval"
+
+    @property
+    def native_value(self) -> float:
+        """Return the current value."""
+        return self.coordinator.config.get(CONF_REPEAT_INTERVAL, DEFAULT_REPEAT_INTERVAL)
+
+    @property
+    def native_min_value(self) -> float:
+        """Return the minimum value."""
+        return 1
+
+    @property
+    def native_max_value(self) -> float:
+        """Return the maximum value."""
+        return 60
+
+    @property
+    def native_step(self) -> float:
+        """Return the step value."""
+        return 1
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        """Return the unit of measurement."""
+        return "s"
+
+    @property
+    def icon(self) -> str:
+        """Return the icon to use in the frontend."""
+        return "mdi:timer-outline"
+
+    @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
+
+    @property
+    def device_info(self) -> Dict[str, Any]:
+        """Return device information."""
+        return self.coordinator.device_info
+
+    async def async_set_native_value(self, value: float) -> None:
+        """Set the value."""
+        await self.coordinator.async_set_repeat_interval(int(value))
 
 
 class AlarmVolumeNumber(CoordinatorEntity, NumberEntity):
