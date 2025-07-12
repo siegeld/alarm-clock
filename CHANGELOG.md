@@ -5,6 +5,74 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.2] - 2025-07-12
+
+### ✨ User Experience Enhancement: Entity Organization
+
+#### Controls vs Configuration Separation
+- **Reorganized Entity Categories** - Clear separation between daily-use controls and setup-once configuration
+- **Cleaner Dashboard** - Only frequently-used controls appear on main dashboard
+- **Configuration Tab** - All setup options organized in device configuration section
+- **Logical Grouping** - Related settings grouped together for better user experience
+
+#### Entity Categorization
+- **Controls (Main Dashboard)** - Time setting, enable/disable, day toggles, snooze/dismiss buttons, status sensors
+- **Configuration (Device Settings)** - Sound settings, timing settings, script settings
+- **Proper Categories** - All configuration entities properly marked with `EntityCategory.CONFIG`
+
+### 🎯 What's Improved
+
+#### Dashboard Layout
+- **Reduced Clutter** - Advanced settings hidden from main dashboard view
+- **Intuitive Access** - Daily controls easily accessible, configuration tucked away
+- **Better Organization** - Settings appear where users expect to find them
+- **Cleaner Interface** - Focus on essential controls for daily use
+
+#### Configuration Management
+- **Sound Settings Group** - Media player, alarm sound, custom URL, volume, repeat options
+- **Timing Settings Group** - Snooze duration, max snoozes, auto-dismiss timing
+- **Script Settings Group** - Pre-alarm, main alarm, and post-alarm script configuration
+- **Logical Grouping** - Related settings grouped together for easier management
+
+### 🔧 Technical Implementation
+
+#### Entity Categories Applied
+- **Switch Entities** - Pre-alarm enabled, post-alarm enabled, repeat sound → CONFIG
+- **Text Entities** - Pre-alarm script, alarm script, post-alarm script, custom sound URL → CONFIG
+- **Number Entities** - All timing and volume controls → CONFIG
+- **Select Entities** - Media player and sound selection → CONFIG
+
+#### Maintained Functionality
+- **No Breaking Changes** - All existing functionality preserved
+- **Same Entity IDs** - All entities maintain same unique identifiers
+- **Backward Compatibility** - Existing configurations continue working unchanged
+
+### 📋 Entity Organization Summary
+
+#### **Controls (Main Dashboard)**
+- `time.{name}_alarm_time` - Set alarm time
+- `switch.{name}_enabled` - Enable/disable alarm
+- `switch.{name}_monday` through `switch.{name}_sunday` - Day toggles
+- `button.{name}_snooze` - Snooze button
+- `button.{name}_dismiss` - Dismiss button
+- `sensor.{name}_next_alarm` - Next alarm time
+- `sensor.{name}_status` - Current status
+- `sensor.{name}_time_until_alarm` - Countdown
+
+#### **Configuration (Device Settings)**
+- Sound: Media player, alarm sound, custom URL, volume, repeat
+- Timing: Snooze duration, max snoozes, auto-dismiss, pre/post-alarm timing
+- Scripts: Pre-alarm, main alarm, post-alarm script entities
+
+### 🚀 Benefits
+
+- **User-Friendly** - Clear separation of daily controls vs setup options
+- **Reduced Clutter** - Main dashboard focused on essential controls
+- **Better Discovery** - Configuration options logically organized
+- **Professional Experience** - Matches Home Assistant UI patterns
+
+---
+
 ## [2.3.1] - 2025-07-12
 
 ### 🛠️ Bug Fixes

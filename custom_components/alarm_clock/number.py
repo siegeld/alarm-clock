@@ -97,6 +97,12 @@ class PreAlarmMinutesNumber(CoordinatorEntity, NumberEntity):
         return "mdi:timer-outline"
 
     @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
+
+    @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
         return self.coordinator.device_info
@@ -229,6 +235,12 @@ class AutoDismissMinutesNumber(CoordinatorEntity, NumberEntity):
         return "mdi:timer-off"
 
     @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
+
+    @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
         return self.coordinator.device_info
@@ -290,6 +302,12 @@ class PostAlarmMinutesNumber(CoordinatorEntity, NumberEntity):
     def icon(self) -> str:
         """Return the icon to use in the frontend."""
         return "mdi:timer-outline"
+
+    @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
 
     @property
     def device_info(self) -> Dict[str, Any]:
@@ -360,6 +378,12 @@ class SnoozeDurationNumber(CoordinatorEntity, NumberEntity):
         return "mdi:alarm-snooze"
 
     @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
+
+    @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
         return self.coordinator.device_info
@@ -421,6 +445,12 @@ class MaxSnoozesNumber(CoordinatorEntity, NumberEntity):
     def icon(self) -> str:
         """Return the icon to use in the frontend."""
         return "mdi:counter"
+
+    @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
 
     @property
     def device_info(self) -> Dict[str, Any]:

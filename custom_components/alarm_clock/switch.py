@@ -178,6 +178,12 @@ class PreAlarmEnabledSwitch(CoordinatorEntity, SwitchEntity):
         return "mdi:alarm-plus" if self.is_on else "mdi:alarm-multiple"
 
     @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
+
+    @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
         return self.coordinator.device_info
@@ -278,6 +284,12 @@ class PostAlarmEnabledSwitch(CoordinatorEntity, SwitchEntity):
     def icon(self) -> str:
         """Return the icon to use in the frontend."""
         return "mdi:alarm-plus" if self.is_on else "mdi:alarm-multiple"
+
+    @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
 
     @property
     def device_info(self) -> Dict[str, Any]:

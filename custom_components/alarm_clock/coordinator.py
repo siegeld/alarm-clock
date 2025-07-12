@@ -124,7 +124,7 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             "name": self.config.get("name", "Alarm Clock"),
             "manufacturer": "Alarm Clock Integration",
             "model": "Alarm Clock",
-            "sw_version": "2.3.1",
+            "sw_version": "2.3.2",
         }
 
     async def _async_update_data(self):
