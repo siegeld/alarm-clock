@@ -124,7 +124,7 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             "name": self.config.get("name", "Alarm Clock"),
             "manufacturer": "Alarm Clock Integration",
             "model": "Alarm Clock",
-            "sw_version": "2.2.0",
+            "sw_version": "2.3.1",
         }
 
     async def _async_update_data(self):
@@ -405,6 +405,58 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
                 self._enabled_days.add(day)
             await self._save_state()
             await self.async_request_refresh()
+
+    async def async_set_media_player_entity(self, entity_id: str):
+        """Set the media player entity."""
+        await self._update_config({CONF_MEDIA_PLAYER_ENTITY: entity_id})
+
+    async def async_set_alarm_sound(self, sound_key: str):
+        """Set the alarm sound."""
+        await self._update_config({CONF_ALARM_SOUND: sound_key})
+
+    async def async_set_custom_sound_url(self, url: str):
+        """Set the custom sound URL."""
+        await self._update_config({CONF_CUSTOM_SOUND_URL: url})
+
+    async def async_set_alarm_volume(self, volume: int):
+        """Set the alarm volume."""
+        await self._update_config({CONF_ALARM_VOLUME: volume})
+
+    async def async_set_repeat_sound(self, repeat: bool):
+        """Set the repeat sound setting."""
+        await self._update_config({CONF_REPEAT_SOUND: repeat})
+
+    async def _update_config(self, updates: dict):
+        """Update configuration and save to config entry."""
+        try:
+            # Get the config entry
+            config_entry = None
+            for entry in self.hass.config_entries.async_entries(DOMAIN):
+                if entry.entry_id == self.entry_id:
+                    config_entry = entry
+                    break
+            
+            if config_entry:
+                # Update config data
+                fresh_data = config_entry.data.copy()
+                fresh_data.update(updates)
+                
+                # Update the config entry
+                self.hass.config_entries.async_update_entry(
+                    config_entry,
+                    data=fresh_data
+                )
+                
+                # Update local config reference
+                self.config = fresh_data
+                
+                _LOGGER.info("Successfully updated config: %s", updates)
+                
+                # Refresh coordinator to propagate changes
+                await self.async_request_refresh()
+                
+        except Exception as e:
+            _LOGGER.error("Error updating config: %s", e)
 
     async def async_snooze(self):
         """Snooze the alarm."""

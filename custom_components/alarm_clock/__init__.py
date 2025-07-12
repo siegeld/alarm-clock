@@ -37,7 +37,7 @@ logger.propagate = True
 # Test log on import
 _LOGGER.error("ALARM CLOCK INTEGRATION: __init__.py imported successfully")
 
-PLATFORMS = ["sensor", "switch", "time", "number", "text", "button"]
+PLATFORMS = ["sensor", "switch", "time", "number", "text", "button", "select"]
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:

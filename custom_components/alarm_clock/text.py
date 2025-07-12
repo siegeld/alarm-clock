@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_CUSTOM_SOUND_URL
 from .coordinator import AlarmClockCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,6 +36,7 @@ async def async_setup_entry(
         PreAlarmScriptText(coordinator, config_entry),
         AlarmScriptText(coordinator, config_entry),
         PostAlarmScriptText(coordinator, config_entry),
+        CustomSoundUrlText(coordinator, config_entry),
     ]
     
     async_add_entities(entities)
@@ -87,6 +88,50 @@ class PreAlarmScriptText(CoordinatorEntity, TextEntity):
         )
         # Update the coordinator config with fresh data
         self.coordinator.config = fresh_data
+
+
+class CustomSoundUrlText(CoordinatorEntity, TextEntity):
+    """Text entity for custom sound URL configuration."""
+
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
+        """Initialize the text entity."""
+        super().__init__(coordinator)
+        self._config_entry = config_entry
+
+    @property
+    def name(self) -> str:
+        """Return the name of the text entity."""
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Custom Sound URL"
+
+    @property
+    def unique_id(self) -> str:
+        """Return the unique ID."""
+        return f"{self.coordinator.unique_id}_custom_sound_url"
+
+    @property
+    def native_value(self) -> str:
+        """Return the current value."""
+        return self.coordinator.config.get(CONF_CUSTOM_SOUND_URL) or ""
+
+    @property
+    def icon(self) -> str:
+        """Return the icon to use in the frontend."""
+        return "mdi:music-note-plus"
+
+    @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
+
+    @property
+    def device_info(self) -> Dict[str, Any]:
+        """Return device information."""
+        return self.coordinator.device_info
+
+    async def async_set_value(self, value: str) -> None:
+        """Set the value."""
+        await self.coordinator.async_set_custom_sound_url(value)
 
 
 class AlarmScriptText(CoordinatorEntity, TextEntity):

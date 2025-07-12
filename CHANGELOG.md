@@ -5,6 +5,102 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2025-07-12
+
+### 🛠️ Bug Fixes
+
+#### Custom Sound URL Display Issue
+- **Fixed "Unknown" Display** - Custom sound URL text entity now properly shows empty field instead of "unknown"
+- **Proper Empty Value Handling** - Text entity returns empty string `""` instead of `None` for unset URLs
+- **Entity Categorization** - All sound configuration entities properly categorized as `EntityCategory.CONFIG`
+
+#### Entity Structure Improvements
+- **Coordinator Pattern** - Fixed select entities to use proper `CoordinatorEntity` inheritance
+- **Entity Properties** - Added all required entity properties like `device_info`, `entity_category`
+- **Consistent Patterns** - Aligned all configuration entities with same structure and patterns
+
+### 🔧 Technical Improvements
+
+#### Configuration Entity Organization
+- **Proper Categories** - All sound settings grouped in device configuration section
+- **Consistent Icons** - Appropriate icons for all configuration entities
+- **Entity Naming** - Clear, descriptive names for all configuration entities
+
+#### Code Quality
+- **Import Cleanup** - Removed unused imports and fixed entity inheritance
+- **Error Handling** - Improved error handling in entity setup and configuration updates
+- **Type Hints** - Enhanced type hints for better IDE support
+
+### 🎯 What's Fixed
+
+- ✅ **Custom Sound URL field displays properly** - No more "unknown" text in empty field
+- ✅ **All sound entities visible** - Media player and sound configuration entities now appear correctly
+- ✅ **Proper entity categorization** - All configuration entities properly grouped in device settings
+- ✅ **Consistent entity behavior** - All configuration entities follow same patterns and work reliably
+
+### 📝 Migration Notes
+
+- No configuration changes required
+- All existing settings preserved
+- Entities will update automatically after integration restart
+- Custom sound URLs will display properly after update
+
+---
+
+## [2.3.0] - 2025-07-12
+
+### 🔄 Major Enhancement: Dynamic Sound Configuration
+
+#### Real-Time Configuration Entities
+- **Dynamic Media Player Selection** - Change media player through `select.{name}_media_player` entity
+- **Sound Selection Interface** - Choose alarm sounds via `select.{name}_alarm_sound` entity
+- **Custom URL Support** - Enter custom sound URLs with `text.{name}_custom_sound_url` entity
+- **Volume Control** - Adjust volume dynamically with `number.{name}_alarm_volume` entity
+- **Repeat Toggle** - Control sound repeating with `switch.{name}_repeat_sound` entity
+
+#### Configuration Management
+- **Persistent Storage** - All changes automatically saved to config entry
+- **Real-time Updates** - Changes apply immediately without integration restart
+- **Backward Compatibility** - Existing configurations continue working unchanged
+- **Error Resilience** - Comprehensive error handling for all configuration operations
+
+#### User Experience Improvements
+- **No Integration Restart** - All sound settings changeable through Home Assistant UI
+- **Card Integration Ready** - All entities available for dashboard cards and automations
+- **Configuration Categories** - Sound settings properly organized in device configuration
+- **Professional UI** - Proper entity icons, categories, and descriptions
+
+### 🔧 Technical Implementation
+
+#### New Entity Platforms
+- **Select Platform** - Added select.py with media player and sound selection entities
+- **Enhanced Text Platform** - Added custom sound URL text entity with proper validation
+- **Enhanced Number Platform** - Added volume control with proper range and steps
+- **Enhanced Switch Platform** - Added repeat sound toggle with proper state management
+
+#### Coordinator Enhancements
+- **Dynamic Config Updates** - New `_update_config()` method for live configuration changes
+- **Media Player Methods** - Enhanced media player integration methods
+- **State Persistence** - Improved state management and persistence
+- **Error Handling** - Comprehensive error handling for configuration operations
+
+### 🎯 New Configuration Entities
+
+- `select.{name}_media_player` - Choose from available media players
+- `select.{name}_alarm_sound` - Select from built-in sounds or custom URL
+- `text.{name}_custom_sound_url` - Enter custom sound file URLs
+- `number.{name}_alarm_volume` - Control volume (0-100%)
+- `switch.{name}_repeat_sound` - Toggle sound repeating
+
+### 🚀 Benefits
+
+- **User-Friendly Configuration** - No need to recreate integrations to change settings
+- **Real-time Responsiveness** - Changes take effect immediately
+- **Dashboard Integration** - All settings available for cards and automations
+- **Professional Experience** - Proper entity organization and categorization
+
+---
+
 ## [2.2.0] - 2025-07-12
 
 ### 🔊 Major New Feature: Built-in Sound Support

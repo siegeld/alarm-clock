@@ -14,6 +14,8 @@ from .const import (
     ENTITY_ID_SNOOZE,
     DAYS_OF_WEEK,
     ALARM_STATE_RINGING,
+    CONF_REPEAT_SOUND,
+    DEFAULT_REPEAT_SOUND,
 )
 from .coordinator import AlarmClockCoordinator
 
@@ -50,6 +52,9 @@ async def async_setup_entry(
     # Pre/Post alarm enable switches
     entities.append(PreAlarmEnabledSwitch(coordinator, config_entry))
     entities.append(PostAlarmEnabledSwitch(coordinator, config_entry))
+    
+    # Repeat sound switch
+    entities.append(RepeatSoundSwitch(coordinator, config_entry))
     
     async_add_entities(entities)
 
@@ -196,6 +201,54 @@ class PreAlarmEnabledSwitch(CoordinatorEntity, SwitchEntity):
         )
         self.coordinator.config = new_data
         await self.coordinator.async_request_refresh()
+
+
+class RepeatSoundSwitch(CoordinatorEntity, SwitchEntity):
+    """Switch to enable/disable repeat sound functionality."""
+
+    def __init__(self, coordinator: AlarmClockCoordinator, config_entry: ConfigEntry):
+        """Initialize the switch."""
+        super().__init__(coordinator)
+        self._config_entry = config_entry
+
+    @property
+    def name(self) -> str:
+        """Return the name of the switch."""
+        return f"{self.coordinator.config.get('name', 'Alarm Clock')} Repeat Sound"
+
+    @property
+    def unique_id(self) -> str:
+        """Return the unique ID."""
+        return f"{self.coordinator.unique_id}_repeat_sound"
+
+    @property
+    def is_on(self) -> bool:
+        """Return true if repeat sound is enabled."""
+        return self.coordinator.config.get(CONF_REPEAT_SOUND, DEFAULT_REPEAT_SOUND)
+
+    @property
+    def icon(self) -> str:
+        """Return the icon to use in the frontend."""
+        return "mdi:repeat" if self.is_on else "mdi:repeat-off"
+
+    @property
+    def entity_category(self):
+        """Return the entity category."""
+        from homeassistant.helpers.entity import EntityCategory
+        return EntityCategory.CONFIG
+
+    @property
+    def device_info(self) -> Dict[str, Any]:
+        """Return device information."""
+        return self.coordinator.device_info
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Enable repeat sound."""
+        await self.coordinator.async_set_repeat_sound(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disable repeat sound."""
+        await self.coordinator.async_set_repeat_sound(False)
 
 
 class PostAlarmEnabledSwitch(CoordinatorEntity, SwitchEntity):
