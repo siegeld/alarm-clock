@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.3] - 2025-01-12
+
+### Fixed
+- **CRITICAL**: Fixed sound overlap issue - sounds now wait for completion before pause interval
+- **Proper Sound Timing**: Repeat interval now represents pause time AFTER sound completes
+- **Sound Duration Awareness**: Added estimated 3-second duration for most alarm sounds
+- **Better Cycle Calculation**: Total cycle = sound duration (3s) + pause interval (3s) = 6s default
+
+### Changed
+- **Repeat Interval Meaning**: Changed from "repeat every X seconds" to "pause X seconds after sound completes"
+- **Default Interval**: Changed from 2 seconds to 3 seconds for better sound separation
+- **Smarter Timing**: System now accounts for sound duration to prevent overlapping
+
+### Technical Details
+- Added `DEFAULT_SOUND_DURATION = 3` seconds constant for sound timing calculations
+- Updated repeat logic: `total_cycle_time = sound_duration + pause_interval`
+- Enhanced logging to show both sound duration and pause interval
+- Fixed sound scheduling to wait for sound completion before starting pause
+
+### What's Fixed
+- ✅ **No more overlapping sounds**: Each sound plays completely before next cycle
+- ✅ **Proper pause timing**: Pause interval now occurs AFTER sound finishes
+- ✅ **Realistic timing**: 3s sound + 3s pause = 6s cycle (vs old 3s overlap)
+- ✅ **Better user experience**: Clean sound separation without audio interference
+
+---
+
 ## [2.4.2] - 2025-01-12
 
 ### Added
