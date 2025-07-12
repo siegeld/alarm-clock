@@ -5,6 +5,61 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2025-01-12
+
+### Fixed
+- **CRITICAL**: Fixed alarm sound not working for existing alarms created before v2.4.0
+- **Enhanced fallback logic**: Alarms without sound configuration now automatically use "classic_beep" as default
+- **Debug logging cleanup**: Removed excessive debug logging that was spamming logs every second
+- **Proper log levels**: Changed setup logs from ERROR to appropriate DEBUG/INFO levels
+
+### Technical Details
+- Enhanced `_get_alarm_sound_url()` with intelligent fallbacks for legacy alarms
+- Automatic default sound assignment for alarms missing sound configuration
+- Informative logging when fallbacks are used ("No alarm sound configured, using default: classic_beep")
+- Removed forced debug logging setup that was causing log spam
+- Clean production logging with appropriate log levels
+
+### What's Fixed
+- ✅ Existing alarms now play sound automatically (no reconfiguration needed)
+- ✅ Clean logs without debug spam from coordinator updates
+- ✅ Backward compatibility with all existing alarm configurations
+- ✅ Production-ready logging levels
+
+---
+
+## [2.4.0] - 2025-01-12
+
+### Added
+- New `test_sound` service to test alarm sound configuration
+- Sound repetition system - alarm now repeats every 10 seconds until dismissed
+- Enhanced logging and diagnostics for media player operations
+- Content type detection for different audio file formats (.mp3, .wav, .ogg, .flac, .m4a)
+- New built-in alarm sounds: Rooster Crow, Ship Bell
+- Event firing for automation integration (sound_started, sound_stopped, sound_error, test_sound events)
+- Comprehensive error handling for media player operations
+- Media player existence validation before attempting playback
+
+### Changed
+- **BREAKING**: Updated all built-in alarm sound URLs to use more reliable sources (soundbible.com)
+- Enhanced media player handling with proper content type detection
+- Improved error handling and logging throughout media player operations
+- Updated services.yaml with proper service definitions for Home Assistant UI
+
+### Fixed
+- **MAJOR**: Fixed alarm sound not playing through media player
+- Fixed hardcoded media content type issue
+- Fixed missing sound repetition functionality
+- Fixed poor error handling in media player operations
+- Fixed volume setting errors not being properly handled
+
+### Technical Details
+- Media player state is now logged for debugging
+- Volume setting is handled separately with individual error handling
+- Sound repetition uses async timers that respect alarm state
+- Enhanced event system for better automation integration
+- Comprehensive logging at INFO, DEBUG, and ERROR levels
+
 ## [2.3.2] - 2025-07-12
 
 ### ✨ User Experience Enhancement: Entity Organization

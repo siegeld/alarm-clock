@@ -124,7 +124,7 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             "name": self.config.get("name", "Alarm Clock"),
             "manufacturer": "Alarm Clock Integration",
             "model": "Alarm Clock",
-            "sw_version": "2.3.2",
+            "sw_version": "2.4.1",
         }
 
     async def _async_update_data(self):
@@ -174,6 +174,9 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
         if self._auto_dismiss_timer:
             self._auto_dismiss_timer()
             self._auto_dismiss_timer = None
+        if hasattr(self, '_sound_repetition_timer') and self._sound_repetition_timer:
+            self._sound_repetition_timer()
+            self._sound_repetition_timer = None
 
     async def _async_update_alarm_state(self):
         """Update the alarm state and schedule actions."""
@@ -426,6 +429,25 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
         """Set the repeat sound setting."""
         await self._update_config({CONF_REPEAT_SOUND: repeat})
 
+    async def async_test_sound(self):
+        """Test the alarm sound on the configured media player."""
+        _LOGGER.info("Testing alarm sound")
+        
+        # Fire event for logbook
+        self.hass.bus.async_fire(
+            "alarm_clock_test_sound",
+            {
+                "device_id": self.device_id,
+                "name": self.config.get("name", "Alarm Clock"),
+            }
+        )
+        
+        # Play the sound once to test
+        await self._async_play_test_sound()
+        
+        # Refresh coordinator data
+        await self.async_request_refresh()
+
     async def _update_config(self, updates: dict):
         """Update configuration and save to config entry."""
         try:
@@ -612,8 +634,19 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("No media player configured for alarm sound")
             return
 
-        # Get sound URL
+        # Check if media player entity exists and is available
+        if not self.hass.states.get(media_player_entity):
+            _LOGGER.error("Media player entity not found: %s", media_player_entity)
+            return
+
+        # Get media player state
+        media_player_state = self.hass.states.get(media_player_entity)
+        _LOGGER.debug("Media player %s state: %s", media_player_entity, media_player_state.state)
+
+        # Get sound URL and content type
         sound_url = self._get_alarm_sound_url()
+        content_type = self._get_alarm_sound_content_type()
+        
         if not sound_url:
             _LOGGER.warning("No alarm sound URL available")
             return
@@ -623,28 +656,35 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             volume = self.config.get(CONF_ALARM_VOLUME)
             if volume is not None:
                 volume_level = volume / 100.0  # Convert to 0-1 range
-                await self.hass.services.async_call(
-                    "media_player",
-                    "volume_set",
-                    {
-                        "entity_id": media_player_entity,
-                        "volume_level": volume_level,
-                    },
-                )
-                _LOGGER.debug("Set alarm volume to %d%% for %s", volume, media_player_entity)
+                _LOGGER.debug("Setting alarm volume to %d%% (%0.2f) for %s", volume, volume_level, media_player_entity)
+                
+                try:
+                    await self.hass.services.async_call(
+                        "media_player",
+                        "volume_set",
+                        {
+                            "entity_id": media_player_entity,
+                            "volume_level": volume_level,
+                        },
+                    )
+                    _LOGGER.info("Successfully set alarm volume to %d%% for %s", volume, media_player_entity)
+                except Exception as volume_error:
+                    _LOGGER.warning("Failed to set volume for %s: %s", media_player_entity, volume_error)
 
-            # Play the sound
+            # Play the sound with proper content type
+            _LOGGER.info("Attempting to play alarm sound: %s (type: %s) on %s", sound_url, content_type, media_player_entity)
+            
             await self.hass.services.async_call(
                 "media_player",
                 "play_media",
                 {
                     "entity_id": media_player_entity,
                     "media_content_id": sound_url,
-                    "media_content_type": "audio/wav",
+                    "media_content_type": content_type,
                 },
             )
             
-            _LOGGER.info("Playing alarm sound: %s on %s", sound_url, media_player_entity)
+            _LOGGER.info("Successfully triggered alarm sound playback on %s", media_player_entity)
             
             # Fire event for logbook
             self.hass.bus.async_fire(
@@ -654,12 +694,30 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
                     "name": self.config.get("name", "Alarm Clock"),
                     "media_player": media_player_entity,
                     "sound_url": sound_url,
+                    "content_type": content_type,
                     "volume": volume,
                 }
             )
 
+            # Set up sound repetition if enabled
+            if self.config.get(CONF_REPEAT_SOUND, True):
+                await self._async_setup_sound_repetition(media_player_entity, sound_url, content_type)
+
         except Exception as e:
             _LOGGER.error("Error playing alarm sound on %s: %s", media_player_entity, e)
+            _LOGGER.error("Sound URL: %s, Content Type: %s", sound_url, content_type)
+            
+            # Fire error event
+            self.hass.bus.async_fire(
+                "alarm_clock_sound_error",
+                {
+                    "device_id": self.device_id,
+                    "name": self.config.get("name", "Alarm Clock"),
+                    "media_player": media_player_entity,
+                    "sound_url": sound_url,
+                    "error": str(e),
+                }
+            )
 
     async def _async_stop_alarm_sound(self):
         """Stop alarm sound via media player."""
@@ -691,19 +749,190 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
     def _get_alarm_sound_url(self) -> Optional[str]:
         """Get the alarm sound URL based on configuration."""
         alarm_sound = self.config.get(CONF_ALARM_SOUND)
+        
+        # If no alarm sound configured (e.g., alarm created before v2.4.0), use default
         if not alarm_sound:
-            return None
+            alarm_sound = "classic_beep"
+            _LOGGER.info("No alarm sound configured, using default: classic_beep")
 
         # Check if it's a custom sound
         if alarm_sound == "custom":
-            return self.config.get(CONF_CUSTOM_SOUND_URL)
+            custom_url = self.config.get(CONF_CUSTOM_SOUND_URL)
+            if not custom_url:
+                _LOGGER.warning("Custom alarm sound selected but no URL provided, falling back to classic_beep")
+                alarm_sound = "classic_beep"
+            else:
+                return custom_url
 
         # Check if it's a built-in sound
         if alarm_sound in BUILTIN_ALARM_SOUNDS:
             return BUILTIN_ALARM_SOUNDS[alarm_sound]["url"]
 
-        # Fallback to default sound
+        # Fallback to default sound if unknown sound specified
+        _LOGGER.warning("Unknown alarm sound '%s', falling back to classic_beep", alarm_sound)
         return BUILTIN_ALARM_SOUNDS.get("classic_beep", {}).get("url")
+
+    def _get_alarm_sound_content_type(self) -> str:
+        """Get the alarm sound content type based on configuration."""
+        alarm_sound = self.config.get(CONF_ALARM_SOUND)
+        if not alarm_sound:
+            return "audio/wav"
+
+        # Check if it's a custom sound
+        if alarm_sound == "custom":
+            custom_url = self.config.get(CONF_CUSTOM_SOUND_URL, "")
+            if custom_url.lower().endswith('.mp3'):
+                return "audio/mp3"
+            elif custom_url.lower().endswith('.ogg'):
+                return "audio/ogg"
+            elif custom_url.lower().endswith('.flac'):
+                return "audio/flac"
+            elif custom_url.lower().endswith('.m4a'):
+                return "audio/m4a"
+            else:
+                return "audio/wav"
+
+        # Check if it's a built-in sound
+        if alarm_sound in BUILTIN_ALARM_SOUNDS:
+            return BUILTIN_ALARM_SOUNDS[alarm_sound].get("content_type", "audio/wav")
+
+        # Fallback to default
+        return "audio/wav"
+
+    async def _async_setup_sound_repetition(self, media_player_entity: str, sound_url: str, content_type: str):
+        """Set up sound repetition for the alarm."""
+        if not self.config.get(CONF_REPEAT_SOUND, True):
+            return
+
+        # Store repetition info
+        if not hasattr(self, '_sound_repetition_timer'):
+            self._sound_repetition_timer = None
+
+        # Cancel any existing repetition timer
+        if self._sound_repetition_timer:
+            self._sound_repetition_timer()
+            self._sound_repetition_timer = None
+
+        # Set up repeating timer - repeat every 10 seconds while alarm is ringing
+        async def repeat_sound(now):
+            if self._state == ALARM_STATE_RINGING:
+                try:
+                    _LOGGER.debug("Repeating alarm sound on %s", media_player_entity)
+                    await self.hass.services.async_call(
+                        "media_player",
+                        "play_media",
+                        {
+                            "entity_id": media_player_entity,
+                            "media_content_id": sound_url,
+                            "media_content_type": content_type,
+                        },
+                    )
+                    
+                    # Schedule next repetition
+                    if self._state == ALARM_STATE_RINGING:
+                        next_repeat = dt_util.now() + timedelta(seconds=10)
+                        self._sound_repetition_timer = async_track_point_in_time(
+                            self.hass, repeat_sound, next_repeat
+                        )
+                        
+                except Exception as e:
+                    _LOGGER.error("Error repeating alarm sound: %s", e)
+
+        # Schedule first repetition
+        next_repeat = dt_util.now() + timedelta(seconds=10)
+        self._sound_repetition_timer = async_track_point_in_time(
+            self.hass, repeat_sound, next_repeat
+        )
+        
+        _LOGGER.debug("Sound repetition scheduled for %s", media_player_entity)
+
+    async def _async_play_test_sound(self):
+        """Play test sound via media player (without repetition)."""
+        media_player_entity = self.config.get(CONF_MEDIA_PLAYER_ENTITY)
+        if not media_player_entity:
+            _LOGGER.debug("No media player configured for test sound")
+            return
+
+        # Check if media player entity exists and is available
+        if not self.hass.states.get(media_player_entity):
+            _LOGGER.error("Media player entity not found: %s", media_player_entity)
+            return
+
+        # Get media player state
+        media_player_state = self.hass.states.get(media_player_entity)
+        _LOGGER.debug("Media player %s state: %s", media_player_entity, media_player_state.state)
+
+        # Get sound URL and content type
+        sound_url = self._get_alarm_sound_url()
+        content_type = self._get_alarm_sound_content_type()
+        
+        if not sound_url:
+            _LOGGER.warning("No alarm sound URL available for test")
+            return
+
+        try:
+            # Set volume first if specified
+            volume = self.config.get(CONF_ALARM_VOLUME)
+            if volume is not None:
+                volume_level = volume / 100.0  # Convert to 0-1 range
+                _LOGGER.debug("Setting test volume to %d%% (%0.2f) for %s", volume, volume_level, media_player_entity)
+                
+                try:
+                    await self.hass.services.async_call(
+                        "media_player",
+                        "volume_set",
+                        {
+                            "entity_id": media_player_entity,
+                            "volume_level": volume_level,
+                        },
+                    )
+                    _LOGGER.info("Successfully set test volume to %d%% for %s", volume, media_player_entity)
+                except Exception as volume_error:
+                    _LOGGER.warning("Failed to set volume for %s: %s", media_player_entity, volume_error)
+
+            # Play the sound with proper content type
+            _LOGGER.info("Attempting to play test sound: %s (type: %s) on %s", sound_url, content_type, media_player_entity)
+            
+            await self.hass.services.async_call(
+                "media_player",
+                "play_media",
+                {
+                    "entity_id": media_player_entity,
+                    "media_content_id": sound_url,
+                    "media_content_type": content_type,
+                },
+            )
+            
+            _LOGGER.info("Successfully triggered test sound playback on %s", media_player_entity)
+            
+            # Fire event for logbook
+            self.hass.bus.async_fire(
+                "alarm_clock_test_sound_started",
+                {
+                    "device_id": self.device_id,
+                    "name": self.config.get("name", "Alarm Clock"),
+                    "media_player": media_player_entity,
+                    "sound_url": sound_url,
+                    "content_type": content_type,
+                    "volume": volume,
+                }
+            )
+
+        except Exception as e:
+            _LOGGER.error("Error playing test sound on %s: %s", media_player_entity, e)
+            _LOGGER.error("Sound URL: %s, Content Type: %s", sound_url, content_type)
+            
+            # Fire error event
+            self.hass.bus.async_fire(
+                "alarm_clock_test_sound_error",
+                {
+                    "device_id": self.device_id,
+                    "name": self.config.get("name", "Alarm Clock"),
+                    "media_player": media_player_entity,
+                    "sound_url": sound_url,
+                    "error": str(e),
+                }
+            )
 
     # Accessor methods for entities
     def get_alarm_time(self) -> Optional[time]:

@@ -17,25 +17,13 @@ from .const import (
     SERVICE_SET_ALARM,
     SERVICE_TOGGLE_DAY,
 )
+
+# Additional service for testing
+SERVICE_TEST_SOUND = "test_sound"
 from .coordinator import AlarmClockCoordinator
 from .intent_script import async_setup_intents
 
 _LOGGER = logging.getLogger(__name__)
-
-# Set default debug logging for the alarm clock integration
-logger = logging.getLogger(f"custom_components.{DOMAIN}")
-logger.setLevel(logging.DEBUG)
-
-# Add console handler to ensure we see the logs
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
-logger.propagate = True
-
-# Test log on import
-_LOGGER.error("ALARM CLOCK INTEGRATION: __init__.py imported successfully")
 
 PLATFORMS = ["sensor", "switch", "time", "number", "text", "button", "select"]
 
@@ -47,7 +35,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Alarm Clock from a config entry."""
-    _LOGGER.error("ALARM CLOCK INTEGRATION: async_setup_entry called with entry: %s", entry.data)
+    _LOGGER.debug("Setting up Alarm Clock integration with entry: %s", entry.data)
     
     hass.data.setdefault(DOMAIN, {})
     
@@ -59,7 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         name=entry.data.get("name", "Alarm Clock"),
         manufacturer="Alarm Clock Integration",
         model="Alarm Clock",
-        sw_version="2.1.3",
+        sw_version="2.4.1",
     )
     
     # Create the coordinator
@@ -79,7 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Set up the coordinator
     await coordinator.async_setup()
     
-    _LOGGER.error("ALARM CLOCK INTEGRATION: Setting up platforms: %s", PLATFORMS)
+    _LOGGER.debug("Setting up platforms: %s", PLATFORMS)
     
     # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -90,7 +78,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Register voice intents
     await async_setup_intents(hass)
     
-    _LOGGER.error("ALARM CLOCK INTEGRATION: Setup complete")
+    _LOGGER.info("Alarm Clock integration setup complete")
     
     return True
 
@@ -208,6 +196,22 @@ async def _async_register_services(hass: HomeAssistant) -> None:
         else:
             _LOGGER.error("Alarm clock coordinator not found for device_id: %s, entity_id: %s", device_id, entity_id)
     
+    async def async_test_sound_service(call):
+        """Handle test sound service call."""
+        device_id = call.data.get("device_id")
+        entity_id = call.data.get("entity_id")
+        
+        coordinator = None
+        if device_id:
+            coordinator = _find_coordinator_by_device_id(device_id)
+        elif entity_id:
+            coordinator = _find_coordinator_by_entity_id(entity_id)
+        
+        if coordinator:
+            await coordinator.async_test_sound()
+        else:
+            _LOGGER.error("Alarm clock coordinator not found for device_id: %s, entity_id: %s", device_id, entity_id)
+    
     # Register services with support for both device_id and entity_id
     hass.services.async_register(
         DOMAIN,
@@ -248,5 +252,15 @@ async def _async_register_services(hass: HomeAssistant) -> None:
             vol.Optional("device_id"): cv.string,
             vol.Optional("entity_id"): cv.entity_id,
             vol.Required("day"): cv.string,
+        }),
+    )
+    
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_TEST_SOUND,
+        async_test_sound_service,
+        schema=vol.Schema({
+            vol.Optional("device_id"): cv.string,
+            vol.Optional("entity_id"): cv.entity_id,
         }),
     )

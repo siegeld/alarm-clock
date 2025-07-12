@@ -62,36 +62,54 @@ SERVICE_SNOOZE = "snooze"
 SERVICE_DISMISS = "dismiss"
 SERVICE_SET_ALARM = "set_alarm"
 SERVICE_TOGGLE_DAY = "toggle_day"
+SERVICE_TEST_SOUND = "test_sound"
 
 # Update intervals
 UPDATE_INTERVAL = timedelta(seconds=30)
 
-# Built-in alarm sounds
+# Built-in alarm sounds - using more reliable sources
 BUILTIN_ALARM_SOUNDS = {
     "classic_beep": {
         "name": "Classic Alarm Beep",
-        "url": "https://www.soundjay.com/misc/sounds/bell-ringing-05.wav",
-        "description": "Traditional alarm clock beep"
+        "url": "https://www.soundbible.com/grab.php?id=1718&type=wav",
+        "description": "Traditional alarm clock beep",
+        "content_type": "audio/wav"
     },
     "gentle_chime": {
         "name": "Gentle Chime",
-        "url": "https://www.soundjay.com/misc/sounds/bell-ringing-01.wav", 
-        "description": "Soft bell chime"
+        "url": "https://www.soundbible.com/grab.php?id=1815&type=wav",
+        "description": "Soft bell chime",
+        "content_type": "audio/wav"
     },
     "urgent_beep": {
         "name": "Urgent Beep",
-        "url": "https://www.soundjay.com/misc/sounds/beep-07a.wav",
-        "description": "More intense beeping"
+        "url": "https://www.soundbible.com/grab.php?id=1577&type=wav",
+        "description": "More intense beeping",
+        "content_type": "audio/wav"
     },
     "digital_alarm": {
         "name": "Digital Alarm",
-        "url": "https://www.soundjay.com/misc/sounds/beep-10.wav",
-        "description": "Digital alarm sound"
+        "url": "https://www.soundbible.com/grab.php?id=1252&type=wav",
+        "description": "Digital alarm sound",
+        "content_type": "audio/wav"
+    },
+    "rooster_crow": {
+        "name": "Rooster Crow",
+        "url": "https://www.soundbible.com/grab.php?id=1210&type=wav",
+        "description": "Natural rooster alarm",
+        "content_type": "audio/wav"
+    },
+    "ship_bell": {
+        "name": "Ship Bell",
+        "url": "https://www.soundbible.com/grab.php?id=1909&type=wav",
+        "description": "Ship bell alarm",
+        "content_type": "audio/wav"
     },
     "custom": {
         "name": "Custom URL",
         "url": None,
-        "description": "Use your own sound URL"
+        "description": "Use your own sound URL",
+        "content_type": "audio/wav"
     }
 }
 

@@ -1,57 +1,81 @@
+# Services for Alarm Clock integration
 snooze:
-  name: Snooze
-  description: Snooze the alarm for the configured duration
+  name: Snooze Alarm
+  description: Snooze the currently ringing alarm
   fields:
+    device_id:
+      name: Device ID
+      description: The device ID of the alarm clock
+      required: false
+      selector:
+        text:
     entity_id:
       name: Entity ID
-      description: The alarm clock entity to snooze
-      required: true
+      description: The entity ID of the alarm clock (for backward compatibility)
+      required: false
       selector:
         entity:
-          domain: alarm_clock
+          domain: sensor
 
 dismiss:
-  name: Dismiss
-  description: Dismiss the active alarm
+  name: Dismiss Alarm
+  description: Dismiss the currently ringing alarm
   fields:
+    device_id:
+      name: Device ID
+      description: The device ID of the alarm clock
+      required: false
+      selector:
+        text:
     entity_id:
       name: Entity ID
-      description: The alarm clock entity to dismiss
-      required: true
+      description: The entity ID of the alarm clock (for backward compatibility)
+      required: false
       selector:
         entity:
-          domain: alarm_clock
+          domain: sensor
 
 set_alarm:
   name: Set Alarm Time
-  description: Set the alarm time programmatically
+  description: Set the alarm time
   fields:
+    device_id:
+      name: Device ID
+      description: The device ID of the alarm clock
+      required: false
+      selector:
+        text:
     entity_id:
       name: Entity ID
-      description: The alarm clock entity to configure
-      required: true
+      description: The entity ID of the alarm clock (for backward compatibility)
+      required: false
       selector:
         entity:
-          domain: alarm_clock
+          domain: sensor
     time:
       name: Time
       description: The time to set the alarm (HH:MM format)
       required: true
-      example: "07:30"
       selector:
         time:
 
 toggle_day:
   name: Toggle Day
-  description: Toggle alarm for a specific day of the week
+  description: Toggle a day of the week for the alarm
   fields:
+    device_id:
+      name: Device ID
+      description: The device ID of the alarm clock
+      required: false
+      selector:
+        text:
     entity_id:
       name: Entity ID
-      description: The alarm clock entity to configure
-      required: true
+      description: The entity ID of the alarm clock (for backward compatibility)
+      required: false
       selector:
         entity:
-          domain: alarm_clock
+          domain: sensor
     day:
       name: Day
       description: The day of the week to toggle
@@ -66,3 +90,21 @@ toggle_day:
             - friday
             - saturday
             - sunday
+
+test_sound:
+  name: Test Alarm Sound
+  description: Test the alarm sound configuration by playing it once
+  fields:
+    device_id:
+      name: Device ID
+      description: The device ID of the alarm clock
+      required: false
+      selector:
+        text:
+    entity_id:
+      name: Entity ID
+      description: The entity ID of the alarm clock (for backward compatibility)
+      required: false
+      selector:
+        entity:
+          domain: sensor
