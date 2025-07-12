@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.2] - 2025-07-12
+
+### 📝 Documentation Enhancement
+
+#### Enhanced Voice Control Documentation
+- **Comprehensive README.md Update** - Added detailed voice control section with examples and responses
+- **Advanced Voice Features** - Documented natural language processing and room-specific targeting
+- **Voice Command Reference** - Complete command list with expected voice assistant responses
+- **Setup Instructions** - Added voice control prerequisites and quick start guide
+
+#### Voice Control Examples
+- **Command Examples** - Added "Command → Response" format showing exact voice feedback
+- **Room-Specific Examples** - Documented multi-room voice targeting capabilities
+- **Natural Language Examples** - Showed flexible time format support and phrasing variations
+- **Day Management Examples** - Complete weekday/weekend voice control documentation
+
+#### Technical Documentation
+- **Voice Setup Guide** - Prerequisites, configuration, and troubleshooting
+- **Integration Details** - How voice control integrates with existing features
+- **Multi-Room Support** - Area detection and intelligent device targeting
+- **Cross-References** - Links to detailed VOICE_CONTROL.md documentation
+
+### 🎯 What's Improved
+
+- ✅ **Complete Voice Documentation** - README.md now includes comprehensive voice control section
+- ✅ **Command Examples** - All voice commands documented with expected responses
+- ✅ **Setup Instructions** - Clear voice control setup and configuration guide
+- ✅ **Feature Integration** - Voice control properly highlighted in feature list
+
+---
+
 ## [2.1.1] - 2025-07-12
 
 ### 🐛 Bug Fix

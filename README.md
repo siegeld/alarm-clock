@@ -118,28 +118,67 @@ The integration supports comprehensive voice control through Home Assistant Voic
 ### Voice Commands
 
 #### Setting Alarms
-- **"Set alarm for 7:30 AM"** - Sets alarm time
-- **"Wake me up at six thirty"** - Natural language time setting
-- **"Set bedroom alarm for 8:00 AM"** - Room-specific targeting
+- **"Set alarm for 7:30 AM"** → "Alarm set for 7:30 am"
+- **"Wake me up at six thirty"** → Natural language time setting
+- **"Set bedroom alarm for 8:00 AM"** → Room-specific targeting
+- **"I need to wake up at 6:00 AM"** → Various natural expressions
 
 #### Enabling/Disabling
-- **"Turn on alarm"** - Enable alarm
-- **"Turn off my alarm"** - Disable alarm
-- **"Enable alarm for weekdays"** - Day-specific control
+- **"Turn on alarm"** → "Alarm enabled for 7:30 am"
+- **"Turn off my alarm"** → "Alarm disabled"
+- **"Enable alarm"** → Activate alarm with confirmation
+- **"Disable the alarm"** → Deactivate alarm
 
-#### During Alarms
-- **"Snooze"** - Snooze active alarm
-- **"Stop alarm"** - Dismiss active alarm
+#### During Active Alarms
+- **"Snooze"** → "Alarm snoozed for 9 minutes"
+- **"Stop alarm"** → "Alarm dismissed"
+- **"Dismiss alarm"** → Stop ringing alarm
+- **"Turn off alarm"** → Emergency stop
 
 #### Status Queries
-- **"What time is my alarm?"** - Check alarm time
-- **"Is my alarm on?"** - Check alarm status
+- **"What time is my alarm?"** → "Your alarm is set for 7:30 am and is currently enabled"
+- **"When is my alarm?"** → Get next alarm time
+- **"Is my alarm on?"** → Check enabled status
+- **"Alarm status"** → Complete status report
 
-### Room-Specific Control
+#### Day Management
+- **"Turn on alarm for Monday"** → "Alarm enabled for Monday"
+- **"Enable alarm for weekdays"** → Enable Mon-Fri
+- **"Turn off alarm for Saturday"** → "Alarm disabled for Saturday"
+- **"Set alarm for weekdays"** → Bulk day management
+
+### Advanced Voice Features
+
+#### Natural Language Processing
+- **Time Formats**: "7:30", "7:30 AM", "seven thirty", "6:00 in the morning"
+- **Flexible Phrasing**: Multiple ways to express the same command
+- **Context Awareness**: Understands morning/evening context
+
+#### Room-Specific Control
 Voice commands automatically target the alarm clock in the room where spoken:
-- Bedroom: "Set alarm for 7:30 AM" → Sets bedroom alarm
-- Kitchen: "Turn on alarm" → Enables kitchen alarm
-- Living Room: "What time is my alarm?" → Queries living room alarm
+- **Bedroom**: "Set alarm for 7:30 AM" → Sets bedroom alarm
+- **Kitchen**: "Turn on alarm" → Enables kitchen alarm  
+- **Living Room**: "What time is my alarm?" → Queries living room alarm
+- **Office**: "Snooze" → Snoozes office alarm
+
+#### Intelligent Targeting
+- **Area Detection**: Automatic room/area identification
+- **Device Fallback**: Uses first available alarm if room-specific not found
+- **Name Targeting**: "Set bedroom alarm" explicitly targets by name
+- **Multi-Room Support**: Different alarms in different rooms
+
+### Voice Control Setup
+
+#### Prerequisites
+1. **Home Assistant Voice Preview** enabled
+2. **Area Assignment** - Alarm clocks assigned to correct rooms
+3. **Voice Assistant** - Echo, Google Home, or HA built-in assistant
+
+#### Quick Start
+1. Install alarm clock integration
+2. Assign alarm devices to rooms in HA
+3. Enable Voice Preview in HA settings
+4. Start using voice commands immediately
 
 For complete voice control documentation, see [VOICE_CONTROL.md](VOICE_CONTROL.md).
 

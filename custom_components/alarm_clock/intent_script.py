@@ -151,12 +151,12 @@ class SetAlarmIntent(intent.IntentHandler):
             name = intent_obj.slots.get("name", {}).get("value")
             
             if not time_str:
-                return intent.IntentResponse(speech="I need a time to set the alarm for")
+                return intent.IntentResponse()
             
             # Parse the time
             parsed_time = _parse_time(time_str)
             if not parsed_time:
-                return intent.IntentResponse(speech="I couldn't understand that time")
+                return intent.IntentResponse()
             
             # Find the coordinator
             coordinator = None
@@ -179,7 +179,9 @@ class SetAlarmIntent(intent.IntentHandler):
                         break
             
             if not coordinator:
-                return intent.IntentResponse(speech="I couldn't find an alarm clock to set")
+                response = intent.IntentResponse()
+                response.async_set_speech(f"I couldn't find an alarm clock to set")
+                return response
             
             # Set the alarm
             time_24h = parsed_time.strftime("%H:%M")
@@ -190,11 +192,15 @@ class SetAlarmIntent(intent.IntentHandler):
                 await coordinator.async_set_alarm_enabled(True)
             
             time_12h = parsed_time.strftime("%I:%M %p").lower()
-            return intent.IntentResponse(speech=f"Alarm set for {time_12h}")
+            response = intent.IntentResponse()
+            response.async_set_speech(f"Alarm set for {time_12h}")
+            return response
         
         except Exception as e:
             _LOGGER.error("Error in SetAlarmIntent: %s", e)
-            return intent.IntentResponse(speech="I couldn't set the alarm. Please try again.")
+            response = intent.IntentResponse()
+            response.async_set_speech("I couldn't set the alarm. Please try again.")
+            return response
 
 
 class EnableAlarmIntent(intent.IntentHandler):
@@ -232,18 +238,24 @@ class EnableAlarmIntent(intent.IntentHandler):
                         break
             
             if not coordinator:
-                return intent.IntentResponse(speech="I couldn't find an alarm clock")
+                response = intent.IntentResponse()
+                response.async_set_speech("I couldn't find an alarm clock")
+                return response
             
             await coordinator.async_set_alarm_enabled(True)
             
             alarm_time = coordinator.get_alarm_time()
             time_str = alarm_time.strftime('%I:%M %p').lower() if alarm_time else "the set time"
             
-            return intent.IntentResponse(speech=f"Alarm enabled for {time_str}")
+            response = intent.IntentResponse()
+            response.async_set_speech(f"Alarm enabled for {time_str}")
+            return response
         
         except Exception as e:
             _LOGGER.error("Error in EnableAlarmIntent: %s", e)
-            return intent.IntentResponse(speech="I couldn't enable the alarm. Please try again.")
+            response = intent.IntentResponse()
+            response.async_set_speech("I couldn't enable the alarm. Please try again.")
+            return response
 
 
 class DisableAlarmIntent(intent.IntentHandler):
@@ -281,15 +293,21 @@ class DisableAlarmIntent(intent.IntentHandler):
                         break
             
             if not coordinator:
-                return intent.IntentResponse(speech="I couldn't find an alarm clock")
+                response = intent.IntentResponse()
+                response.async_set_speech("I couldn't find an alarm clock")
+                return response
             
             await coordinator.async_set_alarm_enabled(False)
             
-            return intent.IntentResponse(speech="Alarm disabled")
+            response = intent.IntentResponse()
+            response.async_set_speech("Alarm disabled")
+            return response
         
         except Exception as e:
             _LOGGER.error("Error in DisableAlarmIntent: %s", e)
-            return intent.IntentResponse(speech="I couldn't disable the alarm. Please try again.")
+            response = intent.IntentResponse()
+            response.async_set_speech("I couldn't disable the alarm. Please try again.")
+            return response
 
 
 class SnoozeAlarmIntent(intent.IntentHandler):
@@ -327,16 +345,22 @@ class SnoozeAlarmIntent(intent.IntentHandler):
                         break
             
             if not coordinator:
-                return intent.IntentResponse(speech="I couldn't find an alarm clock")
+                response = intent.IntentResponse()
+                response.async_set_speech("I couldn't find an alarm clock")
+                return response
             
             await coordinator.async_snooze()
             
             snooze_duration = coordinator.config.get('snooze_duration', 9)
-            return intent.IntentResponse(speech=f"Alarm snoozed for {snooze_duration} minutes")
+            response = intent.IntentResponse()
+            response.async_set_speech(f"Alarm snoozed for {snooze_duration} minutes")
+            return response
         
         except Exception as e:
             _LOGGER.error("Error in SnoozeAlarmIntent: %s", e)
-            return intent.IntentResponse(speech="I couldn't snooze the alarm. Please try again.")
+            response = intent.IntentResponse()
+            response.async_set_speech("I couldn't snooze the alarm. Please try again.")
+            return response
 
 
 class DismissAlarmIntent(intent.IntentHandler):
@@ -374,15 +398,21 @@ class DismissAlarmIntent(intent.IntentHandler):
                         break
             
             if not coordinator:
-                return intent.IntentResponse(speech="I couldn't find an alarm clock")
+                response = intent.IntentResponse()
+                response.async_set_speech("I couldn't find an alarm clock")
+                return response
             
             await coordinator.async_dismiss()
             
-            return intent.IntentResponse(speech="Alarm dismissed")
+            response = intent.IntentResponse()
+            response.async_set_speech("Alarm dismissed")
+            return response
         
         except Exception as e:
             _LOGGER.error("Error in DismissAlarmIntent: %s", e)
-            return intent.IntentResponse(speech="I couldn't dismiss the alarm. Please try again.")
+            response = intent.IntentResponse()
+            response.async_set_speech("I couldn't dismiss the alarm. Please try again.")
+            return response
 
 
 class AlarmStatusIntent(intent.IntentHandler):
@@ -420,22 +450,30 @@ class AlarmStatusIntent(intent.IntentHandler):
                         break
             
             if not coordinator:
-                return intent.IntentResponse(speech="I couldn't find an alarm clock")
+                response = intent.IntentResponse()
+                response.async_set_speech("I couldn't find an alarm clock")
+                return response
             
             alarm_time = coordinator.get_alarm_time()
             alarm_enabled = coordinator.get_alarm_enabled()
             
             if not alarm_time:
-                return intent.IntentResponse(speech="No alarm time is set")
+                response = intent.IntentResponse()
+                response.async_set_speech("No alarm time is set")
+                return response
             
             time_str = alarm_time.strftime('%I:%M %p').lower()
             status = "enabled" if alarm_enabled else "disabled"
             
-            return intent.IntentResponse(speech=f"Your alarm is set for {time_str} and is currently {status}")
+            response = intent.IntentResponse()
+            response.async_set_speech(f"Your alarm is set for {time_str} and is currently {status}")
+            return response
         
         except Exception as e:
             _LOGGER.error("Error in AlarmStatusIntent: %s", e)
-            return intent.IntentResponse(speech="I couldn't get the alarm status. Please try again.")
+            response = intent.IntentResponse()
+            response.async_set_speech("I couldn't get the alarm status. Please try again.")
+            return response
 
 
 class EnableDayIntent(intent.IntentHandler):
@@ -455,11 +493,15 @@ class EnableDayIntent(intent.IntentHandler):
             name = intent_obj.slots.get("name", {}).get("value")
             
             if not day:
-                return intent.IntentResponse(speech="I need to know which day to enable")
+                response = intent.IntentResponse()
+                response.async_set_speech("I need to know which day to enable")
+                return response
             
             day_lower = day.lower()
             if day_lower not in DAYS_OF_WEEK:
-                return intent.IntentResponse(speech="I don't recognize that day")
+                response = intent.IntentResponse()
+                response.async_set_speech("I don't recognize that day")
+                return response
             
             # Find the coordinator
             coordinator = None
@@ -482,17 +524,23 @@ class EnableDayIntent(intent.IntentHandler):
                         break
             
             if not coordinator:
-                return intent.IntentResponse(speech="I couldn't find an alarm clock")
+                response = intent.IntentResponse()
+                response.async_set_speech("I couldn't find an alarm clock")
+                return response
             
             enabled_days = coordinator.get_enabled_days()
             if day_lower not in enabled_days:
                 await coordinator.async_toggle_day(day_lower)
             
-            return intent.IntentResponse(speech=f"Alarm enabled for {day.title()}")
+            response = intent.IntentResponse()
+            response.async_set_speech(f"Alarm enabled for {day.title()}")
+            return response
         
         except Exception as e:
             _LOGGER.error("Error in EnableDayIntent: %s", e)
-            return intent.IntentResponse(speech="I couldn't enable the alarm for that day. Please try again.")
+            response = intent.IntentResponse()
+            response.async_set_speech("I couldn't enable the alarm for that day. Please try again.")
+            return response
 
 
 class DisableDayIntent(intent.IntentHandler):
@@ -512,11 +560,15 @@ class DisableDayIntent(intent.IntentHandler):
             name = intent_obj.slots.get("name", {}).get("value")
             
             if not day:
-                return intent.IntentResponse(speech="I need to know which day to disable")
+                response = intent.IntentResponse()
+                response.async_set_speech("I need to know which day to disable")
+                return response
             
             day_lower = day.lower()
             if day_lower not in DAYS_OF_WEEK:
-                return intent.IntentResponse(speech="I don't recognize that day")
+                response = intent.IntentResponse()
+                response.async_set_speech("I don't recognize that day")
+                return response
             
             # Find the coordinator
             coordinator = None
@@ -539,14 +591,20 @@ class DisableDayIntent(intent.IntentHandler):
                         break
             
             if not coordinator:
-                return intent.IntentResponse(speech="I couldn't find an alarm clock")
+                response = intent.IntentResponse()
+                response.async_set_speech("I couldn't find an alarm clock")
+                return response
             
             enabled_days = coordinator.get_enabled_days()
             if day_lower in enabled_days:
                 await coordinator.async_toggle_day(day_lower)
             
-            return intent.IntentResponse(speech=f"Alarm disabled for {day.title()}")
+            response = intent.IntentResponse()
+            response.async_set_speech(f"Alarm disabled for {day.title()}")
+            return response
         
         except Exception as e:
             _LOGGER.error("Error in DisableDayIntent: %s", e)
-            return intent.IntentResponse(speech="I couldn't disable the alarm for that day. Please try again.")
+            response = intent.IntentResponse()
+            response.async_set_speech("I couldn't disable the alarm for that day. Please try again.")
+            return response
