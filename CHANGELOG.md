@@ -5,6 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.3] - 2025-07-12
+
+### 🚨 Critical Bug Fix
+
+#### IntentResponse API Compatibility Fix
+- **Fixed Critical Voice Control Error** - Fixed IntentResponse constructor missing required 'language' parameter
+- **Complete API Fix** - Updated all IntentResponse instantiations across all 8 intent handlers
+- **Voice Commands Now Work** - All voice commands now function correctly without "operation failed" errors
+- **Proper Error Handling** - Maintained comprehensive exception handling while fixing API compatibility
+
+### 🔧 Technical Changes
+
+#### Intent Handler API Updates
+- **SetAlarmIntent** - Fixed all 5 IntentResponse calls to include language parameter
+- **EnableAlarmIntent** - Fixed all 3 IntentResponse calls to include language parameter
+- **DisableAlarmIntent** - Fixed all 3 IntentResponse calls to include language parameter
+- **SnoozeAlarmIntent** - Fixed all 3 IntentResponse calls to include language parameter
+- **DismissAlarmIntent** - Fixed all 3 IntentResponse calls to include language parameter
+- **AlarmStatusIntent** - Fixed all 4 IntentResponse calls to include language parameter
+- **EnableDayIntent** - Fixed all 5 IntentResponse calls to include language parameter
+- **DisableDayIntent** - Fixed all 5 IntentResponse calls to include language parameter
+
+### 🎯 What's Fixed
+
+- ✅ **Voice commands work without errors** - "Set alarm for 7:30 AM" → "Alarm set for 7:30 am"
+- ✅ **All intent handlers functional** - Every voice command type now works correctly
+- ✅ **Proper voice responses** - Voice assistant provides correct confirmations
+- ✅ **Home Assistant API compatibility** - Fixed for current HA version requirements
+
+### 📝 Root Cause
+
+**Error Pattern**:
+```
+TypeError: IntentResponse.__init__() missing 1 required positional argument: 'language'
+```
+
+**Fix Applied**:
+```python
+# Before (Broken)
+response = intent.IntentResponse()
+
+# After (Fixed) 
+response = intent.IntentResponse(language=intent_obj.language)
+```
+
+### 📋 Migration Notes
+
+- No configuration changes required
+- Voice control now works properly without errors
+- All existing voice commands continue to work
+- All functionality preserved with correct API usage
+
+---
+
 ## [2.1.2] - 2025-07-12
 
 ### 📝 Documentation Enhancement
