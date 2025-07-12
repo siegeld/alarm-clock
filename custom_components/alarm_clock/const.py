@@ -119,4 +119,3 @@ DEFAULT_ALARM_VOLUME = 50
 DEFAULT_ALARM_SOUND = "classic_beep"
 DEFAULT_REPEAT_SOUND = True
 DEFAULT_REPEAT_INTERVAL = 3  # seconds pause after sound completes
-DEFAULT_SOUND_DURATION = 3   # estimated seconds for most alarm sounds

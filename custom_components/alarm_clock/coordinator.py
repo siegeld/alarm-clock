@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.helpers.event import async_track_point_in_time
+from homeassistant.helpers.event import async_track_point_in_time, async_track_state_change_event
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -126,7 +126,7 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
             "name": self.config.get("name", "Alarm Clock"),
             "manufacturer": "Alarm Clock Integration",
             "model": "Alarm Clock",
-            "sw_version": "2.4.3",
+            "sw_version": "2.4.4",
         }
 
     async def _async_update_data(self):
@@ -179,6 +179,9 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
         if hasattr(self, '_sound_repetition_timer') and self._sound_repetition_timer:
             self._sound_repetition_timer()
             self._sound_repetition_timer = None
+        if hasattr(self, '_sound_state_listener') and self._sound_state_listener:
+            self._sound_state_listener()
+            self._sound_state_listener = None
 
     async def _async_update_alarm_state(self):
         """Update the alarm state and schedule actions."""
@@ -806,61 +809,101 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
         return "audio/wav"
 
     async def _async_setup_sound_repetition(self, media_player_entity: str, sound_url: str, content_type: str):
-        """Set up sound repetition for the alarm."""
+        """Set up sound repetition for the alarm using media player state change detection."""
         if not self.config.get(CONF_REPEAT_SOUND, True):
             return
 
-        # Store repetition info
+        # Store repetition info and media player entity
         if not hasattr(self, '_sound_repetition_timer'):
             self._sound_repetition_timer = None
+        if not hasattr(self, '_sound_state_listener'):
+            self._sound_state_listener = None
+            
+        self._repeat_media_player = media_player_entity
+        self._repeat_sound_url = sound_url
+        self._repeat_content_type = content_type
 
-        # Cancel any existing repetition timer
+        # Cancel any existing timers/listeners
         if self._sound_repetition_timer:
             self._sound_repetition_timer()
             self._sound_repetition_timer = None
+        if self._sound_state_listener:
+            self._sound_state_listener()
+            self._sound_state_listener = None
 
-        # Get repeat interval from configuration (pause time after sound completes)
+        # Set up state change listener for media player
+        self._sound_state_listener = async_track_state_change_event(
+            self.hass, [media_player_entity], self._async_on_media_player_state_change
+        )
+        
+        _LOGGER.debug("Sound repetition with state monitoring set up for %s", media_player_entity)
+
+    async def _async_on_media_player_state_change(self, event):
+        """Handle media player state changes for sound repetition."""
+        if self._state != ALARM_STATE_RINGING:
+            # Remove listener if alarm is no longer ringing
+            if hasattr(self, '_sound_state_listener') and self._sound_state_listener:
+                self._sound_state_listener()
+                self._sound_state_listener = None
+            return
+
+        new_state = event.data.get("new_state")
+        if not new_state:
+            return
+
+        # Check if sound has finished playing
+        if new_state.state in ["idle", "paused", "off"]:
+            _LOGGER.debug("Media player %s finished playing (state: %s), scheduling next repeat", 
+                         event.data.get("entity_id"), new_state.state)
+            
+            # Remove current listener
+            if hasattr(self, '_sound_state_listener') and self._sound_state_listener:
+                self._sound_state_listener()
+                self._sound_state_listener = None
+            
+            # Schedule next repetition after pause interval
+            await self._async_schedule_next_repeat()
+
+    async def _async_schedule_next_repeat(self):
+        """Schedule the next sound repetition after pause interval."""
+        if self._state != ALARM_STATE_RINGING:
+            return
+
         pause_interval = self.config.get(CONF_REPEAT_INTERVAL, DEFAULT_REPEAT_INTERVAL)
         
-        # Estimate sound duration (most alarm sounds are 2-4 seconds)
-        from .const import DEFAULT_SOUND_DURATION
-        sound_duration = DEFAULT_SOUND_DURATION
-        
-        # Set up repeating timer - wait for sound to complete, then pause, then repeat
-        async def repeat_sound(now):
+        async def play_next_sound(now):
             if self._state == ALARM_STATE_RINGING:
                 try:
-                    _LOGGER.debug("Repeating alarm sound on %s (sound: %ds + pause: %ds)", 
-                                media_player_entity, sound_duration, pause_interval)
+                    _LOGGER.debug("Playing next alarm sound on %s (after %ds pause)", 
+                                self._repeat_media_player, pause_interval)
+                    
+                    # Play the sound
                     await self.hass.services.async_call(
                         "media_player",
                         "play_media",
                         {
-                            "entity_id": media_player_entity,
-                            "media_content_id": sound_url,
-                            "media_content_type": content_type,
+                            "entity_id": self._repeat_media_player,
+                            "media_content_id": self._repeat_sound_url,
+                            "media_content_type": self._repeat_content_type,
                         },
                     )
                     
-                    # Schedule next repetition after sound duration + pause interval
+                    # Set up state listener for this playback
                     if self._state == ALARM_STATE_RINGING:
-                        total_cycle_time = sound_duration + pause_interval
-                        next_repeat = dt_util.now() + timedelta(seconds=total_cycle_time)
-                        self._sound_repetition_timer = async_track_point_in_time(
-                            self.hass, repeat_sound, next_repeat
+                        self._sound_state_listener = async_track_state_change_event(
+                            self.hass, [self._repeat_media_player], self._async_on_media_player_state_change
                         )
                         
                 except Exception as e:
-                    _LOGGER.error("Error repeating alarm sound: %s", e)
+                    _LOGGER.error("Error playing repeated alarm sound: %s", e)
 
-        # Schedule first repetition after sound duration + pause interval
-        total_cycle_time = sound_duration + pause_interval
-        next_repeat = dt_util.now() + timedelta(seconds=total_cycle_time)
+        # Schedule next sound after pause interval
+        next_play_time = dt_util.now() + timedelta(seconds=pause_interval)
         self._sound_repetition_timer = async_track_point_in_time(
-            self.hass, repeat_sound, next_repeat
+            self.hass, play_next_sound, next_play_time
         )
         
-        _LOGGER.debug("Sound repetition scheduled for %s", media_player_entity)
+        _LOGGER.debug("Next alarm sound scheduled in %d seconds", pause_interval)
 
     async def _async_play_test_sound(self):
         """Play test sound via media player (without repetition)."""

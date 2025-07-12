@@ -47,7 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         name=entry.data.get("name", "Alarm Clock"),
         manufacturer="Alarm Clock Integration",
         model="Alarm Clock",
-        sw_version="2.4.3",
+        sw_version="2.4.4",
     )
     
     # Create the coordinator

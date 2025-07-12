@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.4] - 2025-01-12
+
+### Fixed
+- **CRITICAL**: Replaced hardcoded sound duration with proper media player state change detection
+- **Dynamic Sound Detection**: Now detects actual sound completion via media player state monitoring
+- **Accurate Timing**: Pause interval starts only AFTER sound actually finishes playing
+- **State Change Monitoring**: Uses Home Assistant's event system to track media player state transitions
+
+### Changed
+- **Removed Hardcoded Duration**: Eliminated fixed 3-second sound duration assumption
+- **Event-Driven Timing**: Switched to state change listeners instead of time-based estimates
+- **True Sound Completion**: Waits for media player to report "idle", "paused", or "off" state
+- **Adaptive to Any Sound**: Works with sounds of any duration (1 second to 30+ seconds)
+
+### Technical Details
+- Implemented `async_track_state_change_event()` for media player monitoring
+- Added `_async_on_media_player_state_change()` handler for state transitions
+- Enhanced sound repetition with `_async_schedule_next_repeat()` method
+- Proper listener cleanup in `_cancel_all_timers()` for memory management
+
+### What's Fixed
+- ✅ **True sound completion detection**: Waits for actual playback end, not estimated time
+- ✅ **Works with any sound duration**: No more assumptions about sound length
+- ✅ **Perfect timing**: Pause interval starts exactly when sound stops
+- ✅ **Event-driven architecture**: More reliable than time-based approximations
+- ✅ **Memory efficient**: Proper cleanup of state listeners and timers
+
+---
+
 ## [2.4.3] - 2025-01-12
 
 ### Fixed
