@@ -299,6 +299,11 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
 
     async def _async_trigger_alarm(self, now=None):
         """Trigger the alarm and enter ringing state."""
+        # Prevent multiple triggers if already ringing
+        if self._state == ALARM_STATE_RINGING:
+            _LOGGER.debug("Alarm already ringing, skipping duplicate trigger")
+            return
+            
         self._state = ALARM_STATE_RINGING
         self._alarm_executed = True
         
