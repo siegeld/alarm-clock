@@ -205,6 +205,16 @@ class AlarmClockCoordinator(DataUpdateCoordinator):
         if self._state == ALARM_STATE_RINGING:
             return  # Stay in ringing state until dismissed or snoozed
 
+        # This runs every second. Drop the previous pre-alarm and main timers
+        # before scheduling new ones, or a timer for a superseded time stays
+        # live and fires anyway.
+        if self._pre_alarm_timer:
+            self._pre_alarm_timer()
+            self._pre_alarm_timer = None
+        if self._alarm_timer:
+            self._alarm_timer()
+            self._alarm_timer = None
+
         # Calculate next alarm time
         next_alarm = self._calculate_next_alarm()
         old_next_alarm = self._next_alarm
